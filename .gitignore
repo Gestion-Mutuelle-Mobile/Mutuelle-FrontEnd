@@ -8,7 +8,14 @@ node_modules/
 dist/
 web-build/
 expo-env.d.ts
+.vscode/
+.idea/
+.qodo/
 
+notes.txt
+notes.md 
+FRONTCONTXT.MD
+*.ps1
 # Native
 .kotlin/
 *.orig.*
