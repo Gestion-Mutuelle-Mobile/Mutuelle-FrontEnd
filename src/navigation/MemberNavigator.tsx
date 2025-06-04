@@ -3,9 +3,10 @@ import { createStackNavigator } from "@react-navigation/stack";
 import TabNavigator from "./TabNavigator";
 
 // Screens partagés
-// import ProfileScreen from "../screens/shared/ProfileScreen";
-// import NotificationsScreen from "../screens/shared/NotificationsScreen";
-// import ChatbotScreen from "../screens/shared/ChatbotScreen";
+import ProfileScreen from "../screens/shared/ProfileScreen";
+import NotificationsScreen from "../screens/shared/NotificationsScreen";
+import ChatbotScreen from "../screens/shared/ChatbotScreen";
+import PinScreen from "../screens/auth/PinScreen";
 
 const Stack = createStackNavigator();
 
@@ -26,8 +27,8 @@ export default function MemberNavigator() {
         }}
       />
       
-      {/* Écrans modaux */}
-      {/* <Stack.Screen 
+      {/* Screens partagés */}
+      <Stack.Screen 
         name="Profile" 
         component={ProfileScreen}
         options={{
@@ -55,7 +56,18 @@ export default function MemberNavigator() {
           headerShown: true,
           title: "Assistant",
         }}
-      /> */}
+      />
+
+      {/* 🆕 Pin Screen */}
+      <Stack.Screen 
+        name="Pin" 
+        component={(props) => <PinScreen {...props} mode="setup" />}
+        options={{
+          presentation: "modal",
+          headerShown: true,
+          title: "Code PIN",
+        }}
+      />
     </Stack.Navigator>
   );
 }
