@@ -20,6 +20,7 @@ import {
 import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { MutuelleConfig } from "../../types/config.types";
+import ExerciseModal from "../../components/ExerciseModal";
 
 interface ConfigModalProps {
   visible: boolean;
@@ -31,6 +32,7 @@ interface ConfigModalProps {
   placeholder?: string;
   loading?: boolean; // ✅ Loading state
 }
+
 
 const ConfigModal = ({ 
   visible, 
@@ -121,6 +123,12 @@ export default function SettingsScreen() {
   // ✅ MUTATIONS
   const updateConfigMutation = useUpdateMutuelleConfig();
   const createExerciseMutation = useCreateNewExercise();
+  const [exerciseModalVisible, setExerciseModalVisible] = useState(false);
+
+  // ✅ CRÉATION NOUVEL EXERCICE CORRIGÉE
+  const handleCreateNewExercise = () => {
+    setExerciseModalVisible(true);
+  };
   
   const navigation = useNavigation();
   
@@ -208,31 +216,34 @@ export default function SettingsScreen() {
     }
   };
 
-  // ✅ CRÉATION NOUVEL EXERCICE
-  const handleCreateNewExercise = () => {
-    Alert.alert(
-      "Nouvel exercice",
-      "Voulez-vous créer un nouvel exercice pour la mutuelle ?",
-      [
-        { text: "Annuler", style: "cancel" },
-        {
-          text: "Créer",
-          onPress: async () => {
-            try {
-              await createExerciseMutation.mutateAsync({
-                date_debut: new Date().toISOString().split('T')[0], // Date du jour
-                montant_agape: 45000, // Valeur par défaut
-                duree_mois: 12, // 1 an par défaut
-              });
-              
-              Alert.alert("Succès", "Nouvel exercice créé avec succès !");
-            } catch (error) {
-              Alert.alert("Erreur", "Impossible de créer le nouvel exercice");
-            }
-          },
-        },
-      ]
-    );
+
+ const handleExerciseSubmit = async (exerciseData: any) => {
+    try {
+      console.log("Création exercice avec données:", exerciseData);
+      
+      await createExerciseMutation.mutateAsync(exerciseData);
+      
+      Alert.alert("Succès", "Nouvel exercice créé avec succès !");
+      setExerciseModalVisible(false);
+    } catch (error: any) {
+      console.error("Erreur création exercice:", error);
+      
+      let errorMessage = "Impossible de créer le nouvel exercice";
+      
+      if (error.response?.data) {
+        const errorData = error.response.data;
+        if (typeof errorData === 'object') {
+          // Extraire les erreurs de validation
+          const errorMessages = Object.entries(errorData)
+            .map(([field, messages]) => `${field}: ${Array.isArray(messages) ? messages.join(', ') : messages}`)
+            .join('\n');
+          errorMessage = errorMessages || errorMessage;
+        }
+      }
+      
+      Alert.alert("Erreur", errorMessage);
+      throw error; // Pour que le modal garde l'état loading
+    }
   };
 
   const configItems = config ? [
@@ -354,7 +365,7 @@ export default function SettingsScreen() {
               </View>
               <View style={styles.settingInfo}>
                 <Text style={styles.settingTitle}>Créer nouvel exercice</Text>
-                <Text style={styles.settingDescription}>Démarrer une nouvelle session</Text>
+                <Text style={styles.settingDescription}>Démarrer un nouvel exercice financier</Text>
               </View>
             </View>
             {createExerciseMutation.isPending ? (
@@ -427,6 +438,14 @@ export default function SettingsScreen() {
           loading={updateConfigMutation.isPending}
         />
       )}
+
+       {/* ✅ NOUVEAU Modal de création d'exercice */}
+       <ExerciseModal
+        visible={exerciseModalVisible}
+        onClose={() => setExerciseModalVisible(false)}
+        onSubmit={handleExerciseSubmit}
+        loading={createExerciseMutation.isPending}
+      />
     </>
   );
 }
@@ -474,6 +493,18 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: COLORS.text,
     marginBottom: SPACING.md,
+  },
+  modalBody: {
+    maxHeight: 400, // ✅ Limite la hauteur pour permettre le scroll
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.md,
+  },
+  
+  helperText: {
+    fontSize: FONT_SIZES.sm,
+    color: COLORS.textSecondary,
+    marginTop: SPACING.sm,
+    fontStyle: 'italic',
   },
   profileCard: {
     flexDirection: 'row',
@@ -635,9 +666,7 @@ const styles = StyleSheet.create({
   modalCloseButton: {
     padding: SPACING.xs,
   },
-  modalBody: {
-    padding: SPACING.lg,
-  },
+ 
   modalLabel: {
     fontSize: FONT_SIZES.md,
     fontWeight: '500',

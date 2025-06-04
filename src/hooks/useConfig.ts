@@ -50,14 +50,17 @@ export function useUpdateMutuelleConfig() {
 }
 
 // 🆕 Mutation pour créer un nouvel exercice
+// ✅ CORRECTION : Mutation avec les bons champs
 export function useCreateNewExercise() {
   const queryClient = useQueryClient();
   
   return useMutation({
     mutationFn: async (exerciseData: {
+      nom: string;
       date_debut: string;
-      montant_agape: number;
-      duree_mois?: number;
+      date_fin?: string;
+      description?: string;
+      statut?: string;
     }) => {
       const token = await getStoredAccessToken();
       if (!token) throw new Error("Token manquant");
@@ -67,6 +70,7 @@ export function useCreateNewExercise() {
       // Invalider le cache pour recharger les données
       queryClient.invalidateQueries({ queryKey: ["mutuelle-config"] });
       queryClient.invalidateQueries({ queryKey: ["exercices"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-dashboard"] }); // ✅ Refresh le dashboard
     },
     onError: (error) => {
       console.error("Erreur création exercice:", error);

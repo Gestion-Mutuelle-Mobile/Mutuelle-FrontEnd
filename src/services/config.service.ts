@@ -29,16 +29,19 @@ export const updateMutuelleConfig = async (
 };
 
 // 🆕 FONCTION : Créer un nouvel exercice (nouvelle session)
+// ✅ CORRECTION : Bons champs selon ta doc API
 export const createNewExercise = async (
   exerciseData: {
-    date_debut: string;
-    montant_agape: number;
-    duree_mois?: number;
+    nom: string;                    // ✅ Requis selon la doc
+    date_debut: string;            // ✅ Requis selon la doc  
+    date_fin?: string;       // ✅ Requis selon la doc
+    description?: string;          // ✅ Optionnel
+    statut?: string;              // ✅ Optionnel (défaut probablement EN_PREPARATION)
   },
   accessToken: string
 ): Promise<any> => {
   const { data } = await axios.post(
-    API_BASE_URL + API_ENDPOINTS.exercises,
+    API_BASE_URL + API_ENDPOINTS.exercises, // ✅ Bon endpoint
     exerciseData,
     {
       headers: { 
