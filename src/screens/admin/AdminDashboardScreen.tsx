@@ -21,6 +21,11 @@ import { useAuthContext } from "../../context/AuthContext";
 import { useAdminDashboard } from "../../hooks/useDashboard";
 import { useMutuelleConfig } from "../../hooks/useConfig";
 import { useNavigation } from "@react-navigation/native";
+// ✅ AJOUTER ces imports
+import { useCurrentExercise, useCurrentSession } from "../../hooks/useExercise";
+import { useQueryClient } from "@tanstack/react-query";
+import { useCreateNewSession } from "../../hooks/useSession";
+
 
 const { width } = Dimensions.get("window");
 
@@ -52,10 +57,7 @@ const NewSessionModal = ({ visible, onClose, onSubmit, loading }: NewSessionModa
   });
 
   const handleSubmit = () => {
-    if (!formData.nom.trim()) {
-      Alert.alert("Erreur", "Veuillez saisir le nom de la session");
-      return;
-    }
+   
     onSubmit(formData);
   };
 
@@ -126,10 +128,18 @@ export default function AdminDashboardScreen() {
   const { user } = useAuthContext();
   const { data: dashboardData, isLoading, error, refetch } = useAdminDashboard();
   const { data: config } = useMutuelleConfig();
+   // ✅ AJOUTER cette ligne
+   const queryClient = useQueryClient();
+   // ✅ AJOUTER cette mutation
+  const createSessionMutation = useCreateNewSession();
   
   const [refreshing, setRefreshing] = useState(false);
   const [showSessionModal, setShowSessionModal] = useState(false);
-  const [sessionLoading, setSessionLoading] = useState(false);
+   // ✅ CORRIGER : Utiliser la mutation au lieu du state local
+   const sessionLoading = createSessionMutation.isPending;
+   // ✅ AJOUTER ces hooks ici
+   const { data: currentExercise, isLoading: exerciseLoading } = useCurrentExercise();
+   const { data: currentSession, isLoading: sessionLoading2 } = useCurrentSession();
 
   // 🎯 Modules de navigation organisés en grille
   const navigationModules: NavigationModule[] = [
@@ -197,22 +207,52 @@ export default function AdminDashboardScreen() {
     setRefreshing(true);
     try {
       await refetch();
+       // ✅ AJOUTER ces lignes pour refresh les nouvelles données
+    queryClient.invalidateQueries({ queryKey: ["current-exercise"] });
+    queryClient.invalidateQueries({ queryKey: ["current-session"] });
     } finally {
       setRefreshing(false);
     }
   };
 
   const handleCreateSession = async (sessionData: any) => {
-    setSessionLoading(true);
     try {
-      // TODO: Implémenter la création de session
-      console.log("Création session:", sessionData);
+      // Validation
+
+      // Préparer les données
+      const apiData = {
+        nom: sessionData.nom.trim(),
+        date_session: sessionData.date_session,
+        montant_collation: parseFloat(sessionData.montant_collation) || 45000,
+        description: `Session créée le ${new Date().toLocaleDateString('fr-FR')}`,
+        exercice: currentExercise.id
+
+      };
+
+      console.log("📤 Création session:", apiData);
+
+      // ✅ Appel de la vraie mutation
+      await createSessionMutation.mutateAsync(apiData);
+
       Alert.alert("Succès", "Session créée avec succès !");
       setShowSessionModal(false);
-    } catch (error) {
-      Alert.alert("Erreur", "Impossible de créer la session");
-    } finally {
-      setSessionLoading(false);
+      
+    } catch (error: any) {
+      console.error("❌ Erreur création session:", error);
+      
+      let errorMessage = "Impossible de créer la session";
+      
+      if (error.response?.data) {
+        const errorData = error.response.data;
+        if (typeof errorData === 'object') {
+          const errorMessages = Object.entries(errorData)
+            .map(([field, messages]) => `${field}: ${Array.isArray(messages) ? messages.join(', ') : messages}`)
+            .join('\n');
+          errorMessage = errorMessages || errorMessage;
+        }
+      }
+      
+      Alert.alert("Erreur", errorMessage);
     }
   };
 
@@ -339,6 +379,85 @@ export default function AdminDashboardScreen() {
             </View>
           </View>
         )}
+        
+{/* ✅ AJOUTER CETTE NOUVELLE SECTION ICI */}
+{/* 🏢 Informations exercice et session */}
+<View style={styles.exerciseSessionContainer}>
+  <Text style={styles.sectionTitle}>Exercice & Session</Text>
+  
+  <View style={styles.exerciseSessionGrid}>
+    {/* Exercice en cours */}
+    <View style={[styles.exerciseSessionCard, { backgroundColor: "#4361EE15" }]}>
+      <View style={styles.cardHeader}>
+        <Ionicons name="calendar" size={20} color="#4361EE" />
+        <Text style={[styles.cardTitle, { color: "#4361EE" }]}>Exercice</Text>
+      </View>
+      
+      {exerciseLoading ? (
+        <ActivityIndicator size="small" color="#4361EE" />
+      ) : currentExercise ? (
+        <View style={styles.cardContent}>
+          <Text style={styles.cardMainText}>{currentExercise.nom}</Text>
+          <Text style={styles.cardSubText}>
+            {new Date(currentExercise.date_debut).toLocaleDateString('fr-FR')} - {' '}
+            {currentExercise.date_fin 
+              ? new Date(currentExercise.date_fin).toLocaleDateString('fr-FR')
+              : "En cours"
+            }
+          </Text>
+          <View style={styles.statusBadge}>
+            <Text style={[styles.statusBadgeText, { color: "#4361EE" }]}>
+              {currentExercise.statut}
+            </Text>
+          </View>
+        </View>
+      ) : (
+        <View style={styles.cardContent}>
+          <Text style={styles.cardEmptyText}>Aucun exercice en cours</Text>
+         
+        </View>
+      )}
+    </View>
+
+    {/* Session actuelle */}
+    <View style={[styles.exerciseSessionCard, { backgroundColor: "#38A3A515" }]}>
+      <View style={styles.cardHeader}>
+        <Ionicons name="people" size={20} color="#38A3A5" />
+        <Text style={[styles.cardTitle, { color: "#38A3A5" }]}>Session</Text>
+      </View>
+      
+      {sessionLoading2 ? (
+        <ActivityIndicator size="small" color="#38A3A5" />
+      ) : currentSession ? (
+        <View style={styles.cardContent}>
+          <Text style={styles.cardMainText}>{currentSession.nom}</Text>
+          <Text style={styles.cardSubText}>
+            {new Date(currentSession.date_session).toLocaleDateString('fr-FR')}
+          </Text>
+          <View style={styles.sessionStats}>
+            <Text style={styles.sessionStatsText}>
+              {currentSession.nombre_membres_inscrits || 0} membres
+            </Text>
+            <Text style={styles.sessionStatsText}>
+              {((currentSession.total_solidarite_collectee || 0) / 1000).toFixed(0)}k FCFA
+            </Text>
+          </View>
+        </View>
+      ) : (
+        <View style={styles.cardContent}>
+          <Text style={styles.cardEmptyText}>Aucune session active</Text>
+          <TouchableOpacity
+            style={styles.createButton}
+            onPress={() => setShowSessionModal(true)}
+          >
+            <Text style={styles.createButtonText}>Créer</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+    </View>
+  </View>
+</View>
+
 
         {/* 🎯 Grille des modules principaux */}
         <View style={styles.modulesContainer}>
@@ -757,5 +876,84 @@ const styles = StyleSheet.create({
     fontSize: FONT_SIZES.md,
     fontWeight: "600",
     color: "white",
+  },
+  
+  // ✅ AJOUTER ces nouveaux styles
+  exerciseSessionContainer: {
+    paddingHorizontal: SPACING.lg,
+    marginBottom: SPACING.xl,
+  },
+  exerciseSessionGrid: {
+    flexDirection: "row",
+    gap: SPACING.md,
+  },
+  exerciseSessionCard: {
+    flex: 1,
+    padding: SPACING.md,
+    borderRadius: BORDER_RADIUS.lg,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  cardHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: SPACING.xs,
+    marginBottom: SPACING.sm,
+  },
+  cardTitle: {
+    fontSize: FONT_SIZES.sm,
+    fontWeight: "600",
+  },
+  cardContent: {
+    flex: 1,
+  },
+  cardMainText: {
+    fontSize: FONT_SIZES.md,
+    fontWeight: "bold",
+    color: COLORS.text,
+    marginBottom: SPACING.xs,
+  },
+  cardSubText: {
+    fontSize: FONT_SIZES.sm,
+    color: COLORS.textSecondary,
+    marginBottom: SPACING.sm,
+  },
+  cardEmptyText: {
+    fontSize: FONT_SIZES.sm,
+    color: COLORS.textLight,
+    textAlign: "center",
+    marginBottom: SPACING.sm,
+  },
+  statusBadge: {
+    alignSelf: "flex-start",
+    backgroundColor: COLORS.primaryWithOpacity(0.1),
+    paddingHorizontal: SPACING.xs,
+    paddingVertical: 2,
+    borderRadius: BORDER_RADIUS.sm,
+  },
+  statusBadgeText: {
+    fontSize: FONT_SIZES.xs,
+    fontWeight: "500",
+  },
+  sessionStats: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  sessionStatsText: {
+    fontSize: FONT_SIZES.xs,
+    color: COLORS.textSecondary,
+    fontWeight: "500",
+  },
+  createButton: {
+    backgroundColor: COLORS.primary,
+    paddingHorizontal: SPACING.sm,
+    paddingVertical: SPACING.xs,
+    borderRadius: BORDER_RADIUS.sm,
+    alignSelf: "center",
+  },
+  createButtonText: {
+    fontSize: FONT_SIZES.xs,
+    color: "white",
+    fontWeight: "600",
   },
 });

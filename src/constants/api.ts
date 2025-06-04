@@ -27,7 +27,7 @@ export const API_ENDPOINTS = {
   
   // Exercices/Sessions
   exerciseCreate: "/exercise/create", // 🆕
-  exerciseCurrent: "/exercise/current",
+  exerciseCurrent: "/core/exercices/current",
   exercises: "/core/exercices/",
 
   // Sessions
