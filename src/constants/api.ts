@@ -1,6 +1,6 @@
 // Point d'entrée centralisé pour toutes les URLs d'API
 
-export const API_BASE_URL = "http://localhost:8000/api";
+export const API_BASE_URL = "http://192.168.100.208:8000/api";
 
 export const API_ENDPOINTS = {
   // Auth
@@ -21,10 +21,14 @@ export const API_ENDPOINTS = {
 
   // Config
   configCurrent: "/core/configurations/current/",
+  configurations: "/core/configurations/",
 
-  // Exercices
+  configUpdate: "/config/update", // 🆕
+  
+  // Exercices/Sessions
+  exerciseCreate: "/exercise/create", // 🆕
+  exerciseCurrent: "/exercise/current",
   exercises: "/core/exercices/",
-  exerciseCurrent: "/core/exercices/current/",
 
   // Sessions
   sessions: "/core/sessions/",

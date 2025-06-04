@@ -1,20 +1,30 @@
-import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import React from "react";
+import { ThemeProvider } from "./src/context/ThemeContext";
+import { AuthProvider } from "./src/context/AuthContext";
+import { AppProvider } from "./src/context/AppContext";
+import { PinProvider } from "./src/context/PinContext";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { NavigationContainer } from "@react-navigation/native";
+import AppNavigator from "./src/navigation/AppNavigator";
+import { StatusBar } from "expo-status-bar";
+
+const queryClient = new QueryClient();
 
 export default function App() {
   return (
-    <View style={styles.container}>
-      <Text>Open up App.tsx to start working on your app!</Text>
-      <StatusBar style="auto" />
-    </View>
+    <ThemeProvider>
+      <AppProvider>
+        <QueryClientProvider client={queryClient}>
+          <AuthProvider>
+            <PinProvider>
+              <NavigationContainer>
+                <StatusBar style="dark" />
+                <AppNavigator />
+              </NavigationContainer>
+            </PinProvider>
+          </AuthProvider>
+        </QueryClientProvider>
+      </AppProvider>
+    </ThemeProvider>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});

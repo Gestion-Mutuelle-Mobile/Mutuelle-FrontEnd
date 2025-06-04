@@ -2,24 +2,15 @@ import React from "react";
 import { View, Text, StyleSheet, ScrollView } from "react-native";
 import { COLORS } from "../../constants/config";
 
-export default function FinancialReportsScreen() {
+export default function RenflouementScreen() {
   return (
     <ScrollView style={{ flex: 1, backgroundColor: COLORS.background }}>
-      <Text style={styles.title}>Bilan financier</Text>
-      {/* Ici, tu brancheras tous tes indicateurs, stats, graphs, listes d'emprunts, dettes, etc. */}
+      <Text style={styles.title}>Gestion des renflouements</Text>
+      {/* Ici, tu brancheras la liste des renflouements, actions sur les membres, modals, etc. */}
       <View style={styles.card}>
-        <Text style={styles.cardLabel}>Nombre d'emprunts en cours:</Text>
+        <Text style={styles.cardLabel}>Liste des renflouements en cours</Text>
         <Text style={styles.cardValue}>--</Text>
       </View>
-      <View style={styles.card}>
-        <Text style={styles.cardLabel}>Montant total dettes non remboursées:</Text>
-        <Text style={styles.cardValue}>--</Text>
-      </View>
-      <View style={styles.card}>
-        <Text style={styles.cardLabel}>Cumul total épargnes:</Text>
-        <Text style={styles.cardValue}>--</Text>
-      </View>
-      {/* ...ajoute plus de stats */}
     </ScrollView>
   );
 }
