@@ -105,7 +105,7 @@ export default function AdminNavigator() {
         component={ProfileScreen}
         options={{
           presentation: "modal",
-          headerShown: true,
+          headerShown: false,
           title: "Mon Profil",
         }}
       />
