@@ -13,6 +13,7 @@ import RenflouementScreen from "../screens/admin/RenflouementScreen";
 import MemberDashboardScreen from "../screens/member/MemberDashboardScreen";
 import MemberHistoryScreen from "../screens/member/MemberHistoryScreen";
 import MemberSettingsScreen from "../screens/member/MemberSettingsScreen";
+import ChatbotFAB from "../components/ChatbotFAB";
 
 const Tab = createBottomTabNavigator();
 
@@ -138,7 +139,7 @@ export default function TabNavigator() {
     },
   });
 
-  return (
+  return (<View style={{ flex: 1 }}>
     <Tab.Navigator
       initialRouteName={user?.is_administrateur ? "AccueilAdmin" : "Accueil"}
       screenOptions={commonScreenOptions}
@@ -202,6 +203,9 @@ export default function TabNavigator() {
         </>
       )}
     </Tab.Navigator>
+    <ChatbotFAB />
+    
+  </View>
   );
 }
 
@@ -213,6 +217,7 @@ const styles = StyleSheet.create({
     height: 40,
     position: "relative",
   },
+  
   activeIndicator: {
     position: "absolute",
     top: -4,
