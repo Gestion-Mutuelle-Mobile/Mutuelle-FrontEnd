@@ -35,4 +35,14 @@ export interface DashboardData {
       total_paiements: number;
     };
     membres_problematiques: any[];
+
+    renflouements?: {
+      montants: {
+        total_du: number;
+        total_paye: number;
+      };
+      pourcentages: {
+        taux_recouvrement: number;
+      };
+    };
   }
