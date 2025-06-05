@@ -7,8 +7,19 @@ export const fetchMembers = async (accessToken: string, params?: Record<string, 
     params,
     headers: { Authorization: `Bearer ${accessToken}` }
   });
-  console.log("MEMEBRES TROUVEES : ", data); // <-- data est un objet paginé
-  return data.results || []; // <-- renvoie toujours un tableau
+  console.log("📡 RESPONSE COMPLETE:", data);
+  
+  // 🔧 Gestion de la réponse paginée
+  if (data && Array.isArray(data.results)) {
+    console.log("✅ MEMBRES TROUVÉS:", data.results.length);
+    return data.results;
+  } else if (Array.isArray(data)) {
+    console.log("✅ MEMBRES DIRECTS:", data.length);
+    return data;
+  } else {
+    console.log("⚠️ RÉPONSE INATTENDUE:", typeof data);
+    return [];
+  }
 };
 
 export const fetchMemberById = async (id: string, accessToken: string): Promise<Member> => {

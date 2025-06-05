@@ -66,6 +66,7 @@ export const PinProvider = ({ children }: { children: React.ReactNode }) => {
             // Premier login = effacer ancien PIN et demander nouveau
             if (pin) {
               await SecureStore.deleteItemAsync(PIN_KEY);
+              
             }
             setIsPinDefined(false);
             setIsPinValidated(false);

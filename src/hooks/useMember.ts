@@ -9,7 +9,9 @@ export function useMembers(params?: Record<string, any>) {
     queryFn: async () => {
       const token = await getStoredAccessToken();
       if (!token) throw new Error("Token manquant");
-      return fetchMembers(token, params);
+      const response = await fetchMembers(token, params);
+      console.log("🔍 Réponse API membres:", response);
+      return response;
     },
   });
 }

@@ -154,6 +154,7 @@ export default function SettingsScreen() {
           onPress: async () => {
             try {
               await logout();
+              navigation.navigate("Login");
             } catch (error) {
               Alert.alert("Erreur", "Impossible de se déconnecter");
             }

@@ -31,6 +31,7 @@ import { Loan } from "../../types/loan.types";
 import { Renflouement } from "../../types/renflouement.types";
 import { Assistance } from "../../types/assistance.types";
 import { Member } from "../../types/member.types";
+import { useNavigation } from "@react-navigation/native";
 
 const { width } = Dimensions.get("window");
 
@@ -181,6 +182,8 @@ function DetailModal<T extends { id: string }>({
     );
   }, [data, search]);
 
+  console.log('🔍 Modal Debug:', { title, dataCount: data.length, filteredCount: filteredData.length, loading });
+
   return (
     <Modal visible={visible} transparent animationType="slide" statusBarTranslucent>
       <BlurView intensity={20} style={StyleSheet.absoluteFillObject} />
@@ -223,6 +226,13 @@ function DetailModal<T extends { id: string }>({
             </View>
           )}
 
+          {/* Debug info */}
+          {/* <View style={{ padding: 10, backgroundColor: '#f0f0f0' }}>
+            <Text style={{ fontSize: 12, color: '#666' }}>
+              Debug: {data.length} éléments • Filtré: {filteredData.length} • Loading: {loading ? 'Oui' : 'Non'}
+            </Text>
+          </View> */}
+
           {/* Content */}
           <View style={styles.modalBody}>
             {loading ? (
@@ -232,20 +242,38 @@ function DetailModal<T extends { id: string }>({
               </View>
             ) : filteredData.length > 0 ? (
               <FlatList
-                data={filteredData}
-                keyExtractor={(item) => item.id}
-                renderItem={renderItem}
-                showsVerticalScrollIndicator={false}
-                ItemSeparatorComponent={() => <View style={styles.separator} />}
-              />
+                  data={filteredData}
+                  keyExtractor={(item) => item.id}
+                  renderItem={renderItem}
+                  showsVerticalScrollIndicator={true}  // 🔧 IMPORTANT: Montre la scrollbar
+                  scrollEnabled={true}                 // 🔧 IMPORTANT: Active le scroll
+                  nestedScrollEnabled={true}           // 🔧 IMPORTANT: Pour modal
+                  bounces={true}                       // 🔧 Effet de rebond iOS
+                  style={{
+                    flex: 1,                          // 🔧 IMPORTANT: Prend tout l'espace
+                  }}
+                  contentContainerStyle={{
+                    paddingVertical: SPACING.md,       // 🔧 Padding pour le contenu
+                    flexGrow: 1,                      // 🔧 IMPORTANT: Permet de grandir
+                  }}
+                  ItemSeparatorComponent={() => <View style={styles.separator} />}
+                  removeClippedSubviews={false}       // 🔧 Assure que tout reste visible
+                  keyboardShouldPersistTaps="handled" // 🔧 Pour la recherche
+                />
+
             ) : (
               <View style={styles.emptyContainer}>
                 <Ionicons name="document-outline" size={64} color={COLORS.textLight} />
                 <Text style={styles.emptyTitle}>Aucune donnée</Text>
                 <Text style={styles.emptyText}>{emptyMessage}</Text>
+                <Text style={styles.emptyText}>
+                  Total disponible: {data.length} • Recherche: "{search}"
+                </Text>
               </View>
             )}
           </View>
+
+          
         </View>
       </View>
     </Modal>
@@ -257,7 +285,7 @@ export default function FinancialReportsScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [activeModal, setActiveModal] = useState<string | null>(null);
 
-  // Hooks de données
+  // 🔧 Hooks de données avec protection
   const { data: dashboard, isLoading, refetch } = useAdminDashboard();
   const { data: loansData, isLoading: loadingLoans } = useLoans();
   const { data: renflouementsData, isLoading: loadingRenf } = useRenflouements();
@@ -267,11 +295,25 @@ export default function FinancialReportsScreen() {
   const { data: socialFund, isLoading: loadingFund } = useSocialFundCurrent();
   const { data: currentSession } = useCurrentSession();
 
+  // 🔧 Protection contre les valeurs undefined avec debug
   const loans = Array.isArray(loansData) ? loansData : [];
   const renflouements = Array.isArray(renflouementsData) ? renflouementsData : [];
   const solidarity = Array.isArray(solidarityData) ? solidarityData : [];
   const assistances = Array.isArray(assistancesData) ? assistancesData : [];
   const members = Array.isArray(membersData) ? membersData : [];
+
+  // Debug logs
+  console.log('🔍 Debug données finales:', {
+    members: { count: members.length, loading: loadingMembers, raw: membersData },
+    loans: { count: loans.length, loading: loadingLoans },
+    renflouements: { count: renflouements.length, loading: loadingRenf },
+    assistances: { count: assistances.length, loading: loadingAssist },
+  });
+  const navigation=useNavigation();
+  const handleDetailPress = ( route: string) => {
+    console.log(`Navigation vers ${route}`);
+    navigation.navigate(route);
+  };
 
   // Formatage monétaire
   const formatCurrency = (amount: number | undefined | null): string => {
@@ -283,79 +325,59 @@ export default function FinancialReportsScreen() {
     }).format(amount);
   };
 
-  // Statistiques calculées avec protection complète
-  // Remplace tout le useMemo des stats par ceci :
+  // 🔧 Statistiques calculées avec protection COMPLÈTE
+  const stats = useMemo((): CalculatedStats => {
+    const empruntsEnCours = dashboard?.emprunts_en_cours?.nombre ?? 0;
+    const empruntsTotal = dashboard?.emprunts_en_cours?.montant_total_attendu ?? 0;
+    const tresorTotal = dashboard?.tresor?.cumul_total_epargnes ?? 0;
+    const fondsSocialTotal = dashboard?.fonds_social?.montant_total ?? 0;
+    
+    const membresTotal = members.length;
+    const membresEnRegle = members.filter(m => m?.statut === "EN_REGLE").length;
+    const membresNonEnRegle = membresTotal - membresEnRegle;
+    const membresComplets = members.filter(m => 
+      m?.donnees_financieres?.inscription?.inscription_complete
+    ).length;
+    
+    const inscriptionsTotal = members.reduce((sum, m) => 
+      sum + (m?.donnees_financieres?.inscription?.montant_paye_inscription ?? 0), 0
+    );
 
-const stats = useMemo((): CalculatedStats => {
-  // Ajoute ça juste avant le useMemo pour déboguer (à supprimer après)
-  console.log('🔍 Debug données:', {
-    renflouements: {
-      data: renflouementsData,
-      isArray: Array.isArray(renflouementsData),
-      length: renflouementsData?.length,
-      type: typeof renflouementsData
-    },
-    assistances: {
-      data: assistancesData,
-      isArray: Array.isArray(assistancesData),
-      length: assistancesData?.length,
-      type: typeof assistancesData
-    }
-  });
-  // Protection complète contre les valeurs undefined
-  const empruntsEnCours = dashboard?.emprunts_en_cours?.nombre ?? 0;
-  const empruntsTotal = dashboard?.emprunts_en_cours?.montant_total_attendu ?? 0;
-  const tresorTotal = dashboard?.tresor?.cumul_total_epargnes ?? 0;
-  const fondsSocialTotal = dashboard?.fonds_social?.montant_total ?? 0;
-  
-  // Vérification que members est un tableau
-  const membersArray = Array.isArray(members) ? members : [];
-  const membresTotal = membersArray.length;
-  const membresEnRegle = membersArray.filter(m => m.statut === "EN_REGLE").length;
-  const membresNonEnRegle = membresTotal - membresEnRegle;
-  const membresComplets = membersArray.filter(m => 
-    m.donnees_financieres?.inscription?.inscription_complete
-  ).length;
-  
-  const inscriptionsTotal = membersArray.reduce((sum, m) => 
-    sum + (m.donnees_financieres?.inscription?.montant_paye_inscription ?? 0), 0
-  );
+    // Renflouements avec fallback sur dashboard si disponible
+    const renflouementDu = dashboard?.renflouements?.montants?.total_du ?? 
+      renflouements.reduce((sum, r) => sum + (r?.montant_du ?? 0), 0);
+    const renflouementPaye = dashboard?.renflouements?.montants?.total_paye ?? 
+      renflouements.reduce((sum, r) => sum + (r?.montant_paye ?? 0), 0);
+    const tauxRecouvrement = dashboard?.renflouements?.pourcentages?.taux_recouvrement ?? 
+      (renflouementDu > 0 ? (renflouementPaye / renflouementDu) * 100 : 100);
+    
+    const assistancesPayees = assistances.filter(a => a?.statut === "PAYEE").length;
+    const assistancesTotales = assistances.length;
+    const montantAssistances = assistances
+      .filter(a => a?.statut === "PAYEE")
+      .reduce((sum, a) => sum + (a?.montant ?? 0), 0);
 
-  // 🔧 CORRECTION PRINCIPALE: Protection complète pour renflouements
-  const renflouementsArray = Array.isArray(renflouements) ? renflouements : [];
-  const renflouementDu = renflouementsArray.reduce((sum, r) => sum + (r?.montant_du ?? 0), 0);
-  const renflouementPaye = renflouementsArray.reduce((sum, r) => sum + (r?.montant_paye ?? 0), 0);
-  const tauxRecouvrement = renflouementDu > 0 ? (renflouementPaye / renflouementDu) * 100 : 100;
-  
-  // 🔧 CORRECTION: Protection complète pour assistances
-  const assistancesArray = Array.isArray(assistances) ? assistances : [];
-  const assistancesPayees = assistancesArray.filter(a => a?.statut === "PAYEE").length;
-  const assistancesTotales = assistancesArray.length;
-  const montantAssistances = assistancesArray
-    .filter(a => a?.statut === "PAYEE")
-    .reduce((sum, a) => sum + (a?.montant ?? 0), 0);
+    const situationNette = tresorTotal + fondsSocialTotal - empruntsTotal - (renflouementDu - renflouementPaye);
 
-  const situationNette = tresorTotal + fondsSocialTotal - empruntsTotal - (renflouementDu - renflouementPaye);
-
-  return {
-    empruntsEnCours,
-    empruntsTotal,
-    tresorTotal,
-    fondsSocialTotal,
-    membresTotal,
-    membresEnRegle,
-    membresNonEnRegle,
-    membresComplets,
-    inscriptionsTotal,
-    renflouementDu,
-    renflouementPaye,
-    tauxRecouvrement,
-    situationNette,
-    assistancesPayees,
-    assistancesTotales,
-    montantAssistances,
-  };
-}, [dashboard, members, renflouements, assistances]);
+    return {
+      empruntsEnCours,
+      empruntsTotal,
+      tresorTotal,
+      fondsSocialTotal,
+      membresTotal,
+      membresEnRegle,
+      membresNonEnRegle,
+      membresComplets,
+      inscriptionsTotal,
+      renflouementDu,
+      renflouementPaye,
+      tauxRecouvrement,
+      situationNette,
+      assistancesPayees,
+      assistancesTotales,
+      montantAssistances,
+    };
+  }, [dashboard, members, renflouements, assistances]);
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -366,7 +388,7 @@ const stats = useMemo((): CalculatedStats => {
     }
   };
 
-  // 📄 Génération PDF
+  // 📄 Génération PDF (simplifié)
   const generatePDF = async () => {
     try {
       const htmlContent = `
@@ -385,10 +407,6 @@ const stats = useMemo((): CalculatedStats => {
               .metric { flex: 1; min-width: 200px; padding: 15px; border: 1px solid #ddd; border-radius: 8px; }
               .metric-title { font-weight: bold; color: #333; }
               .metric-value { font-size: 20px; color: #2563EB; margin-top: 5px; }
-              .table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-              .table th, .table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-              .table th { background-color: #f5f5f5; font-weight: bold; }
-              .footer { margin-top: 50px; text-align: center; color: #666; font-size: 12px; }
             </style>
           </head>
           <body>
@@ -407,80 +425,18 @@ const stats = useMemo((): CalculatedStats => {
                   <div class="metric-value">${formatCurrency(stats.tresorTotal)}</div>
                 </div>
                 <div class="metric">
-                  <div class="metric-title">Fonds Social</div>
-                  <div class="metric-value">${formatCurrency(stats.fondsSocialTotal)}</div>
+                  <div class="metric-title">Membres Total</div>
+                  <div class="metric-value">${stats.membresTotal}</div>
                 </div>
                 <div class="metric">
-                  <div class="metric-title">Emprunts en cours</div>
-                  <div class="metric-value">${formatCurrency(stats.empruntsTotal)}</div>
+                  <div class="metric-title">Membres En Règle</div>
+                  <div class="metric-value">${stats.membresEnRegle}</div>
                 </div>
                 <div class="metric">
                   <div class="metric-title">Situation Nette</div>
                   <div class="metric-value">${formatCurrency(stats.situationNette)}</div>
                 </div>
               </div>
-            </div>
-
-            <div class="section">
-              <div class="section-title">MEMBRES</div>
-              <div class="grid">
-                <div class="metric">
-                  <div class="metric-title">Total Membres</div>
-                  <div class="metric-value">${stats.membresTotal}</div>
-                </div>
-                <div class="metric">
-                  <div class="metric-title">En Règle</div>
-                  <div class="metric-value">${stats.membresEnRegle}</div>
-                </div>
-                <div class="metric">
-                  <div class="metric-title">Non En Règle</div>
-                  <div class="metric-value">${stats.membresNonEnRegle}</div>
-                </div>
-                <div class="metric">
-                  <div class="metric-title">Inscriptions Complètes</div>
-                  <div class="metric-value">${stats.membresComplets}</div>
-                </div>
-              </div>
-            </div>
-
-            <div class="section">
-              <div class="section-title">RENFLOUEMENTS</div>
-              <div class="grid">
-                <div class="metric">
-                  <div class="metric-title">Montant Dû</div>
-                  <div class="metric-value">${formatCurrency(stats.renflouementDu)}</div>
-                </div>
-                <div class="metric">
-                  <div class="metric-title">Montant Payé</div>
-                  <div class="metric-value">${formatCurrency(stats.renflouementPaye)}</div>
-                </div>
-                <div class="metric">
-                  <div class="metric-title">Taux de Recouvrement</div>
-                  <div class="metric-value">${stats.tauxRecouvrement.toFixed(1)}%</div>
-                </div>
-              </div>
-            </div>
-
-            <div class="section">
-              <div class="section-title">ASSISTANCES</div>
-              <div class="grid">
-                <div class="metric">
-                  <div class="metric-title">Total Accordées</div>
-                  <div class="metric-value">${stats.assistancesTotales}</div>
-                </div>
-                <div class="metric">
-                  <div class="metric-title">Payées</div>
-                  <div class="metric-value">${stats.assistancesPayees}</div>
-                </div>
-                <div class="metric">
-                  <div class="metric-title">Montant Total</div>
-                  <div class="metric-value">${formatCurrency(stats.montantAssistances)}</div>
-                </div>
-              </div>
-            </div>
-
-            <div class="footer">
-              Document généré automatiquement par l'application Mutuelle ENSP
             </div>
           </body>
         </html>
@@ -502,103 +458,111 @@ const stats = useMemo((): CalculatedStats => {
     }
   };
 
-  // Rendus des items pour modals - Typés correctement
-  const renderLoanItem: ListRenderItem<Loan> = ({ item: loan }) => (
-    <View style={styles.listItem}>
-      <View style={styles.listItemHeader}>
-        <Text style={styles.listItemName}>{loan.membre_info?.nom_complet || "N/A"}</Text>
-        <Text style={[styles.listItemStatus, { 
-          color: loan.statut === "EN_COURS" ? COLORS.warning : COLORS.success 
-        }]}>
-          {loan.statut_display}
-        </Text>
-      </View>
-      <View style={styles.listItemDetails}>
-        <Text style={styles.listItemDetail}>
-          Emprunté: {formatCurrency(loan.montant_emprunte)}
-        </Text>
-        <Text style={styles.listItemDetail}>
-          Restant: {formatCurrency(loan.montant_restant_a_rembourser)}
-        </Text>
-        <Text style={styles.listItemDetail}>
-          Session: {loan.session_nom || "N/A"}
-        </Text>
-      </View>
-      <View style={styles.progressContainer}>
-        <View style={styles.progressTrack}>
-          <View style={[styles.progressBar, { 
-            width: `${loan.pourcentage_rembourse || 0}%`,
-            backgroundColor: COLORS.success 
-          }]} />
+  // 🔧 Rendus des items pour modals - Avec debug
+  const renderMemberItem: ListRenderItem<Member> = ({ item: member, index }) => {
+    // 🔍 DEBUG COMPLET
+    console.log(`🔍 Render member ${index}:`, {
+      id: member?.id,
+      utilisateur: member?.utilisateur,
+      nom_complet: member?.utilisateur?.nom_complet,
+      statut: member?.statut,
+      structure_complete: member
+    });
+  
+    // Vérification des données critiques
+    if (!member) {
+      console.log('❌ Member est null/undefined');
+      return (
+        <View style={styles.listItem}>
+          <Text style={styles.errorText}>Membre non défini</Text>
         </View>
-        <Text style={styles.progressText}>{loan.pourcentage_rembourse || 0}% remboursé</Text>
-      </View>
-    </View>
-  );
-
-  const renderMemberItem: ListRenderItem<Member> = ({ item: member }) => {
-    const financial = member.donnees_financieres;
+      );
+    }
+  
+    if (!member.id) {
+      console.log('❌ Member.id manquant');
+      return (
+        <View style={styles.listItem}>
+          <Text style={styles.errorText}>ID membre manquant</Text>
+        </View>
+      );
+    }
+  
+    const financial = member?.donnees_financieres;
+    
     return (
-      <View style={styles.listItem}>
+      <View style={[styles.listItem, { backgroundColor: '#f0f8ff', borderWidth: 2, borderColor: '#blue' }]}>
         <View style={styles.listItemHeader}>
-          <Text style={styles.listItemName}>{member.utilisateur?.nom_complet || "N/A"}</Text>
+          <Text style={styles.listItemName}>
+            {member?.utilisateur?.nom_complet || member?.utilisateur.first_name || `Membre ${member.id}`}
+          </Text>
           <View style={[styles.statusBadge, { 
-            backgroundColor: member.statut === "EN_REGLE" ? COLORS.success : COLORS.error 
+            backgroundColor: member?.statut === "EN_REGLE" ? COLORS.success : COLORS.error 
           }]}>
-            <Text style={styles.statusBadgeText}>{member.statut}</Text>
+            <Text style={styles.statusBadgeText}>{member?.statut || "N/A"}</Text>
           </View>
         </View>
         <View style={styles.memberFinancials}>
           <View style={styles.financialRow}>
-            <Text style={styles.financialLabel}>Épargne:</Text>
+            <Text style={styles.financialLabel}>Email:</Text>
             <Text style={styles.financialValue}>
-              {formatCurrency(financial?.epargne?.epargne_totale)}
+              {member?.utilisateur?.email  || "N/A"}
             </Text>
           </View>
           <View style={styles.financialRow}>
-            <Text style={styles.financialLabel}>Inscription:</Text>
-            <Text style={[styles.financialValue, { 
-              color: financial?.inscription?.inscription_complete ? COLORS.success : COLORS.warning 
-            }]}>
-              {financial?.inscription?.pourcentage_inscription?.toFixed(1) || 0}% 
+            <Text style={styles.financialLabel}>Numéro:</Text>
+            <Text style={styles.financialValue}>
+              {member?.numero_membre || "N/A"}
             </Text>
           </View>
           <View style={styles.financialRow}>
-            <Text style={styles.financialLabel}>Situation nette:</Text>
-            <Text style={[styles.financialValue, { 
-              color: (financial?.resume_financier?.situation_nette ?? 0) >= 0 ? COLORS.success : COLORS.error 
-            }]}>
-              {formatCurrency(financial?.resume_financier?.situation_nette)}
+            <Text style={styles.financialLabel}>ID:</Text>
+            <Text style={styles.financialValue}>
+              {member?.id}
             </Text>
           </View>
         </View>
       </View>
     );
   };
+  const renderLoanItem: ListRenderItem<Loan> = ({ item: loan }) => (
+    <View style={styles.listItem}>
+      <View style={styles.listItemHeader}>
+        <Text style={styles.listItemName}>{loan?.membre_info?.nom_complet || "N/A"}</Text>
+        <Text style={[styles.listItemStatus, { 
+          color: loan?.statut === "EN_COURS" ? COLORS.warning : COLORS.success 
+        }]}>
+          {loan?.statut_display || loan?.statut}
+        </Text>
+      </View>
+      <View style={styles.listItemDetails}>
+        <Text style={styles.listItemDetail}>
+          Emprunté: {formatCurrency(loan?.montant_emprunte)}
+        </Text>
+        <Text style={styles.listItemDetail}>
+          Restant: {formatCurrency(loan?.montant_restant_a_rembourser)}
+        </Text>
+        <Text style={styles.listItemDetail}>
+          Session: {loan?.session_nom || "N/A"}
+        </Text>
+      </View>
+    </View>
+  );
 
   const renderRenflouementItem: ListRenderItem<Renflouement> = ({ item: renf }) => (
     <View style={styles.listItem}>
       <View style={styles.listItemHeader}>
-        <Text style={styles.listItemName}>{renf.membre_info?.nom_complet || "N/A"}</Text>
+        <Text style={styles.listItemName}>{renf?.membre_info?.nom_complet || "N/A"}</Text>
         <Text style={[styles.listItemStatus, { 
-          color: renf.is_solde ? COLORS.success : COLORS.error 
+          color: renf?.is_solde ? COLORS.success : COLORS.error 
         }]}>
-          {renf.is_solde ? "Soldé" : "En cours"}
+          {renf?.is_solde ? "Soldé" : "En cours"}
         </Text>
       </View>
       <View style={styles.listItemDetails}>
-        <Text style={styles.listItemDetail}>Dû: {formatCurrency(renf.montant_du)}</Text>
-        <Text style={styles.listItemDetail}>Payé: {formatCurrency(renf.montant_paye)}</Text>
-        <Text style={styles.listItemDetail}>Cause: {renf.cause || "N/A"}</Text>
-      </View>
-      <View style={styles.progressContainer}>
-        <View style={styles.progressTrack}>
-          <View style={[styles.progressBar, { 
-            width: `${renf.pourcentage_paye || 0}%`,
-            backgroundColor: COLORS.warning 
-          }]} />
-        </View>
-        <Text style={styles.progressText}>{renf.pourcentage_paye || 0}% payé</Text>
+        <Text style={styles.listItemDetail}>Dû: {formatCurrency(renf?.montant_du)}</Text>
+        <Text style={styles.listItemDetail}>Payé: {formatCurrency(renf?.montant_paye)}</Text>
+        <Text style={styles.listItemDetail}>Cause: {renf?.cause || "N/A"}</Text>
       </View>
     </View>
   );
@@ -606,22 +570,22 @@ const stats = useMemo((): CalculatedStats => {
   const renderAssistanceItem: ListRenderItem<Assistance> = ({ item: assist }) => (
     <View style={styles.listItem}>
       <View style={styles.listItemHeader}>
-        <Text style={styles.listItemName}>{assist.membre_info?.nom_complet || "N/A"}</Text>
+        <Text style={styles.listItemName}>{assist?.membre_info?.nom_complet || "N/A"}</Text>
         <Text style={[styles.listItemStatus, { 
-          color: assist.statut === "PAYEE" ? COLORS.success : COLORS.warning 
+          color: assist?.statut === "PAYEE" ? COLORS.success : COLORS.warning 
         }]}>
-          {assist.statut_display}
+          {assist?.statut_display || assist?.statut}
         </Text>
       </View>
       <View style={styles.listItemDetails}>
         <Text style={styles.listItemDetail}>
-          Type: {assist.type_assistance_info?.nom || "N/A"}
+          Type: {assist?.type_assistance_info?.nom || "N/A"}
         </Text>
         <Text style={styles.listItemDetail}>
-          Montant: {formatCurrency(assist.montant)}
+          Montant: {formatCurrency(assist?.montant)}
         </Text>
         <Text style={styles.listItemDetail}>
-          Date: {new Date(assist.date_demande).toLocaleDateString('fr-FR')}
+          Date: {assist?.date_demande ? new Date(assist.date_demande).toLocaleDateString('fr-FR') : "N/A"}
         </Text>
       </View>
     </View>
@@ -659,7 +623,7 @@ const stats = useMemo((): CalculatedStats => {
               Session: {currentSession?.nom || "Aucune session active"}
             </Text>
             <Text style={styles.headerDate}>
-              Dernière MAJ: {new Date().toLocaleDateString('fr-FR')}
+              MAJ: {new Date().toLocaleDateString('fr-FR')}
             </Text>
           </View>
           <TouchableOpacity style={styles.pdfButton} onPress={generatePDF}>
@@ -668,7 +632,7 @@ const stats = useMemo((): CalculatedStats => {
         </View>
       </LinearGradient>
 
-      {/* Métriques principales */}
+      {/* Métriques principales - Corrigées */}
       <View style={styles.metricsGrid}>
         <MetricCard
           title="Trésor Total"
@@ -687,9 +651,10 @@ const stats = useMemo((): CalculatedStats => {
           icon="heart"
           gradient={[COLORS.success, "#57CC99"]}
           trend="stable"
-          onPress={() => setActiveModal("socialFund")}
         />
-        
+      </View>
+
+      <View style={styles.metricsGrid}>
         <MetricCard
           title="Emprunts"
           value={formatCurrency(stats.empruntsTotal)}
@@ -710,147 +675,119 @@ const stats = useMemo((): CalculatedStats => {
         />
       </View>
 
-      {/* Analyse des membres */}
-      <SectionHeader
-        title="Analyse des Membres"
-        subtitle={`${stats.membresEnRegle}/${stats.membresTotal} en règle`}
-        icon="people"
-        color={COLORS.primary}
-        action={{
-          label: "Voir détail",
-          onPress: () => setActiveModal("members")
-        }}
-      />
-      
-      <View style={styles.membersOverview}>
-        <View style={styles.membersStat}>
-          <Text style={styles.membersStatValue}>{stats.membresTotal}</Text>
-          <Text style={styles.membersStatLabel}>Total</Text>
-        </View>
-        <View style={styles.membersStat}>
-          <Text style={[styles.membersStatValue, { color: COLORS.success }]}>
-            {stats.membresEnRegle}
-          </Text>
-          <Text style={styles.membersStatLabel}>En règle</Text>
-        </View>
-        <View style={styles.membersStat}>
-          <Text style={[styles.membersStatValue, { color: COLORS.error }]}>
-            {stats.membresNonEnRegle}
-          </Text>
-          <Text style={styles.membersStatLabel}>Problèmes</Text>
-        </View>
-        <View style={styles.membersStat}>
-          <Text style={[styles.membersStatValue, { color: COLORS.primary }]}>
-            {stats.membresTotal > 0 ? ((stats.membresEnRegle / stats.membresTotal) * 100).toFixed(0) : 0}%
-          </Text>
-          <Text style={styles.membersStatLabel}>Conformité</Text>
-        </View>
-      </View>
-
-      {/* Inscriptions */}
-      <SectionHeader
-        title="Inscriptions"
-        subtitle={`${stats.membresComplets} complètes sur ${stats.membresTotal}`}
-        icon="card"
-        color={COLORS.success}
-      />
-      
-      <View style={styles.inscriptionsOverview}>
-        <View style={styles.inscriptionStat}>
-          <Text style={styles.inscriptionValue}>{formatCurrency(stats.inscriptionsTotal)}</Text>
-          <Text style={styles.inscriptionLabel}>Total perçu</Text>
-        </View>
-        <View style={styles.inscriptionStat}>
-          <Text style={[styles.inscriptionValue, { color: COLORS.success }]}>
-            {stats.membresComplets}
-          </Text>
-          <Text style={styles.inscriptionLabel}>Complètes</Text>
-        </View>
-        <View style={styles.inscriptionStat}>
-          <Text style={[styles.inscriptionValue, { color: COLORS.warning }]}>
-            {stats.membresTotal - stats.membresComplets}
-          </Text>
-          <Text style={styles.inscriptionLabel}>En cours</Text>
+      {/* Analyse des membres - Section corrigée */}
+      <View style={styles.fullWidthSection}>
+        <SectionHeader
+          title="Analyse des Membres"
+          subtitle={`${stats.membresEnRegle}/${stats.membresTotal} en règle`}
+          icon="people"
+          color={COLORS.primary}
+          action={{
+            label: "Voir détail",
+            onPress: () => {
+              console.log('🔍 Ouverture modal membres avec:', members.length, 'membres');
+              setActiveModal("members");
+            }
+          }}
+        />
+        
+        <View style={styles.membersOverview}>
+          <View style={styles.membersStat}>
+            <Text style={styles.membersStatValue}>{stats.membresTotal}</Text>
+            <Text style={styles.membersStatLabel}>Total</Text>
+          </View>
+          <View style={styles.membersStat}>
+            <Text style={[styles.membersStatValue, { color: COLORS.success }]}>
+              {stats.membresEnRegle}
+            </Text>
+            <Text style={styles.membersStatLabel}>En règle</Text>
+          </View>
+          <View style={styles.membersStat}>
+            <Text style={[styles.membersStatValue, { color: COLORS.error }]}>
+              {stats.membresNonEnRegle}
+            </Text>
+            <Text style={styles.membersStatLabel}>Problèmes</Text>
+          </View>
+          <View style={styles.membersStat}>
+            <Text style={[styles.membersStatValue, { color: COLORS.primary }]}>
+              {stats.membresTotal > 0 ? ((stats.membresEnRegle / stats.membresTotal) * 100).toFixed(0) : 0}%
+            </Text>
+            <Text style={styles.membersStatLabel}>Conformité</Text>
+          </View>
         </View>
       </View>
 
-      {/* Emprunts détaillés */}
-      <SectionHeader
-        title="Emprunts & Remboursements"
-        subtitle={`${stats.empruntsEnCours} emprunts actifs`}
-        icon="analytics"
-        color={COLORS.warning}
-        action={{
-          label: "Gérer",
-          onPress: () => setActiveModal("loans")
-        }}
-      />
-      
-      <MetricCard
-        title="Emprunts en cours"
-        value={formatCurrency(stats.empruntsTotal)}
-        subtitle={`${stats.empruntsEnCours} emprunts actifs`}
-        icon="trending-down"
-        gradient={[COLORS.warning, "#FCBF49"]}
-        onPress={() => setActiveModal("loans")}
-      />
-
-      {/* Renflouements */}
-      <SectionHeader
-        title="Renflouements"
-        subtitle={`${stats.tauxRecouvrement.toFixed(1)}% de recouvrement`}
-        icon="refresh-circle"
-        color={COLORS.warning}
-        action={{
-          label: "Gérer",
-          onPress: () => setActiveModal("renflouements")
-        }}
-      />
-      
-      <MetricCard
-        title="Renflouements"
-        value={formatCurrency(stats.renflouementDu)}
-        subtitle={`Payé: ${formatCurrency(stats.renflouementPaye)}`}
-        icon="refresh-circle"
-        gradient={[COLORS.warning, "#FCBF49"]}
-        percentage={stats.tauxRecouvrement}
-        onPress={() => setActiveModal("renflouements")}
-      />
-
-      {/* Assistances */}
-      <SectionHeader
-        title="Assistances"
-        subtitle={`${stats.assistancesPayees}/${stats.assistancesTotales} payées`}
-        icon="medical"
-        color="#7209B7"
-        action={{
-          label: "Historique",
-          onPress: () => setActiveModal("assistances")
-        }}
-      />
-
-      <View style={styles.assistancesOverview}>
-        <View style={styles.assistanceStat}>
-          <Text style={styles.assistanceValue}>{stats.assistancesTotales}</Text>
-          <Text style={styles.assistanceLabel}>Total accordées</Text>
+      {/* Inscriptions - Section corrigée */}
+      <View style={styles.fullWidthSection}>
+        <SectionHeader
+          title="Inscriptions"
+          subtitle={`${stats.membresComplets} complètes sur ${stats.membresTotal}`}
+          icon="card"
+          color={COLORS.success}
+          action={{
+            label: "Voir détail",
+            onPress: () => {
+              handleDetailPress("InscriptionsScreen")
+            }
+          }}
+        />
+        
+        <View style={styles.inscriptionsOverview}>
+          <View style={styles.inscriptionStat}>
+            <Text style={styles.inscriptionValue}>{formatCurrency(stats.inscriptionsTotal)}</Text>
+            <Text style={styles.inscriptionLabel}>Total perçu</Text>
+          </View>
+          <View style={styles.inscriptionStat}>
+            <Text style={[styles.inscriptionValue, { color: COLORS.success }]}>
+              {stats.membresComplets}
+            </Text>
+            <Text style={styles.inscriptionLabel}>Complètes</Text>
+          </View>
+          <View style={styles.inscriptionStat}>
+            <Text style={[styles.inscriptionValue, { color: COLORS.warning }]}>
+              {stats.membresTotal - stats.membresComplets}
+            </Text>
+            <Text style={styles.inscriptionLabel}>En cours</Text>
+          </View>
         </View>
-        <View style={styles.assistanceStat}>
-          <Text style={[styles.assistanceValue, { color: COLORS.success }]}>
-            {stats.assistancesPayees}
-          </Text>
-          <Text style={styles.assistanceLabel}>Payées</Text>
-        </View>
-        <View style={styles.assistanceStat}>
-          <Text style={[styles.assistanceValue, { color: "#7209B7" }]}>
-            {formatCurrency(stats.montantAssistances)}
-          </Text>
-          <Text style={styles.assistanceLabel}>Montant total</Text>
+      </View>
+
+      {/* Renflouements - Section corrigée */}
+      <View style={styles.fullWidthSection}>
+        <SectionHeader
+          title="Renflouements"
+          subtitle={`${stats.tauxRecouvrement.toFixed(1)}% de recouvrement`}
+          icon="refresh-circle"
+          color={COLORS.warning}
+          action={{
+            label: "Gérer",
+            onPress: () => setActiveModal("renflouements")
+          }}
+        />
+        
+        <View style={styles.renflouementOverview}>
+          <View style={styles.renflouementStat}>
+            <Text style={styles.renflouementValue}>{formatCurrency(stats.renflouementDu)}</Text>
+            <Text style={styles.renflouementLabel}>Total dû</Text>
+          </View>
+          <View style={styles.renflouementStat}>
+            <Text style={[styles.renflouementValue, { color: COLORS.success }]}>
+              {formatCurrency(stats.renflouementPaye)}
+            </Text>
+            <Text style={styles.renflouementLabel}>Payé</Text>
+          </View>
+          <View style={styles.renflouementStat}>
+            <Text style={[styles.renflouementValue, { color: COLORS.primary }]}>
+              {stats.tauxRecouvrement.toFixed(1)}%
+            </Text>
+            <Text style={styles.renflouementLabel}>Recouvrement</Text>
+          </View>
         </View>
       </View>
 
       {/* Activité récente */}
       {dashboard?.activite_recente && (
-        <View style={styles.activityContainer}>
+        <View style={styles.fullWidthSection}>
           <SectionHeader
             title="Activité récente"
             icon="pulse"
@@ -886,7 +823,17 @@ const stats = useMemo((): CalculatedStats => {
         </View>
       )}
 
-      {/* Modals détaillés */}
+      {/* Modals détaillés avec debug */}
+      <DetailModal
+        visible={activeModal === "members"}
+        title={`Liste des membres (${members.length})`}
+        data={members}
+        renderItem={renderMemberItem}
+        onClose={() => setActiveModal(null)}
+        loading={loadingMembers}
+        emptyMessage={`Aucun membre trouvé. Total chargé: ${members.length}`}
+      />
+
       <DetailModal
         visible={activeModal === "loans"}
         title="Emprunts en cours"
@@ -895,16 +842,6 @@ const stats = useMemo((): CalculatedStats => {
         onClose={() => setActiveModal(null)}
         loading={loadingLoans}
         emptyMessage="Aucun emprunt en cours"
-      />
-
-      <DetailModal
-        visible={activeModal === "members"}
-        title="Liste des membres"
-        data={members}
-        renderItem={renderMemberItem}
-        onClose={() => setActiveModal(null)}
-        loading={loadingMembers}
-        emptyMessage="Aucun membre enregistré"
       />
 
       <DetailModal
@@ -939,6 +876,12 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingBottom: SPACING.xxl,
+  },
+  errorText: {
+    color: 'red',
+    fontSize: 16,
+    textAlign: 'center',
+    padding: 20,
   },
 
   // Header
@@ -979,16 +922,15 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
 
-  // Métriques
+  // Métriques - CORRIGÉES
   metricsGrid: {
     flexDirection: "row",
-    flexWrap: "wrap",
     paddingHorizontal: SPACING.lg,
     marginTop: SPACING.lg,
     gap: SPACING.md,
   },
   metricCard: {
-    width: (width - SPACING.lg * 2 - SPACING.md) / 2,
+    flex: 1,
     borderRadius: BORDER_RADIUS.xl,
     overflow: "hidden",
     shadowColor: COLORS.shadowLight,
@@ -1035,13 +977,15 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.sm,
   },
 
-  // Sections
+  // Sections - CORRIGÉES pour éviter le décalage
+  fullWidthSection: {
+    marginTop: SPACING.lg,
+  },
   sectionHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: SPACING.lg,
-    marginTop: SPACING.xl,
     marginBottom: SPACING.md,
   },
   sectionTitleContainer: {
@@ -1079,7 +1023,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
 
-  // Membres overview
+  // Membres overview - CORRIGÉ
   membersOverview: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -1104,7 +1048,7 @@ const styles = StyleSheet.create({
     marginTop: SPACING.xs,
   },
 
-  // Inscriptions overview
+  // Inscriptions overview - CORRIGÉ
   inscriptionsOverview: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -1114,7 +1058,6 @@ const styles = StyleSheet.create({
     padding: SPACING.md,
     borderWidth: 1,
     borderColor: COLORS.border,
-    marginBottom: SPACING.lg,
   },
   inscriptionStat: {
     alignItems: "center",
@@ -1132,8 +1075,8 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
 
-  // Assistances overview
-  assistancesOverview: {
+  // Renflouements overview - NOUVEAU
+  renflouementOverview: {
     flexDirection: "row",
     justifyContent: "space-between",
     marginHorizontal: SPACING.lg,
@@ -1142,28 +1085,24 @@ const styles = StyleSheet.create({
     padding: SPACING.md,
     borderWidth: 1,
     borderColor: COLORS.border,
-    marginBottom: SPACING.lg,
   },
-  assistanceStat: {
+  renflouementStat: {
     alignItems: "center",
     flex: 1,
   },
-  assistanceValue: {
+  renflouementValue: {
     fontSize: FONT_SIZES.md,
     fontWeight: "bold",
     color: COLORS.text,
   },
-  assistanceLabel: {
+  renflouementLabel: {
     fontSize: FONT_SIZES.sm,
     color: COLORS.textSecondary,
     marginTop: SPACING.xs,
     textAlign: "center",
   },
 
-  // Activité
-  activityContainer: {
-    marginTop: SPACING.lg,
-  },
+  // Activité - CORRIGÉ
   activityGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -1225,13 +1164,14 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
     borderRadius: BORDER_RADIUS.xl,
     width: "100%",
-    maxHeight: "90%",
+    height: "60%",  // 🔧 CHANGÉ: hauteur fixe au lieu de maxHeight
     overflow: "hidden",
     shadowColor: COLORS.shadowDark,
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.3,
     shadowRadius: 20,
     elevation: 15,
+    
   },
   modalHeader: {
     paddingHorizontal: SPACING.lg,
@@ -1272,9 +1212,11 @@ const styles = StyleSheet.create({
     paddingVertical: SPACING.md,
   },
   modalBody: {
-    flex: 1,
-    paddingHorizontal: SPACING.lg,
-    paddingTop: SPACING.md,
+  flex: 1,           // 🔧 GARDE flex: 1
+  paddingHorizontal: SPACING.lg,
+  paddingTop: SPACING.md,
+  paddingBottom: SPACING.md,  // 🔧 AJOUTE padding bottom
+
   },
 
   // Liste items
@@ -1368,5 +1310,6 @@ const styles = StyleSheet.create({
     fontSize: FONT_SIZES.md,
     color: COLORS.textSecondary,
     textAlign: "center",
+    marginBottom: SPACING.sm,
   },
 });

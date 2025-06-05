@@ -18,6 +18,7 @@ import AssistanceScreen from "../screens/admin/AssistanceScreen";
 import SolidarityScreen from "../screens/admin/SolidarityScreen";
 import LoansScreen from "../screens/admin/LoansScreen";
 import RepaymentsScreen from "../screens/admin/RepaymentsScreen";
+import LoginScreen from "../screens/auth/LoginScreen";
 
 const Stack = createStackNavigator();
 
@@ -150,6 +151,8 @@ export default function AdminNavigator() {
           title: "Gestion des Membres",
         }}
       />
+
+  <Stack.Screen name="Login" component={LoginScreen} />
     </Stack.Navigator>
   );
 }
