@@ -388,7 +388,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: COLORS.surface,
     borderWidth: 2,
-    borderColor: COLORS.border,
+    borderColor: "transparent",
   },
   numberText: {
     fontSize: FONT_SIZES.xxl,
