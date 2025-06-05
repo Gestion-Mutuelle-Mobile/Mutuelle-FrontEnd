@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { fetchMembers, fetchMemberById, fetchMemberFullData } from "../services/member.service";
+import { fetchMembers, fetchMemberById, fetchMemberFullData, addInscriptionPayment, createFullMember } from "../services/member.service";
 import { Member } from "../types/member.types";
 import { getStoredAccessToken } from "../services/auth.service";
 
@@ -35,5 +35,42 @@ export function useMemberFinance(id: string) {
       return fetchMemberFullData(id, token);
     },
     enabled: !!id,
+  });
+}
+
+
+export function useCreateFullMember() {
+  const queryClient = useQueryClient();
+  console.log("*************** UTILISATION DU HOOK DE CREATION DE MEMEBRE ***********")
+  return useMutation({
+    mutationFn: async (payload: any) => {
+      const token = await getStoredAccessToken();
+      if (!token) throw new Error("Token manquant");
+      return createFullMember(payload, token);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["members"] });
+    },
+  });
+}
+
+export function useAddInscriptionPayment() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      membre_id,
+      montant,
+      notes,
+    }: {
+      membre_id: string;
+      montant: number;
+      notes: string;
+    }) => {
+      const token = await getStoredAccessToken();
+      if (!token) throw new Error("Token manquant");
+      return addInscriptionPayment(membre_id, montant, notes, token);
+    },
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["members"] }),
   });
 }

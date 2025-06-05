@@ -382,7 +382,7 @@ export default function SettingsScreen() {
           
           <TouchableOpacity
             style={styles.settingItem}
-            onPress={() => navigation.navigate("ChangePassword")}
+            onPress={() => navigation.navigate("Profile")}
           >
             <View style={styles.settingItemLeft}>
               <View style={styles.settingIcon}>

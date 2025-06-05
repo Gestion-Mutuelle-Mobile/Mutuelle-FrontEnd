@@ -75,6 +75,13 @@ export const PinProvider = ({ children }: { children: React.ReactNode }) => {
           }
         } catch (error) {
           console.log("Erreur lecture PIN:", error);
+          try{
+            await SecureStore.deleteItemAsync(PIN_KEY);
+          }
+          catch(eror2){
+            console.log(eror2)
+          }
+          
           setIsPinDefined(false);
           setIsPinValidated(false);
         }
