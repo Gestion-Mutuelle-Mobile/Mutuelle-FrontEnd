@@ -44,7 +44,7 @@ export default function AdminNavigator() {
         component={InscriptionsScreen}
         options={{
           presentation: "card",
-          headerShown: true,
+          headerShown: false,
           title: "Gestion des Inscriptions",
         }}
       />

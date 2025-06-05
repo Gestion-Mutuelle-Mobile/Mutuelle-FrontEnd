@@ -6,6 +6,7 @@ export const COLORS = {
   primaryDark: "#1D4ED8",     // Bleu foncé (pour gradients et hover)
   primaryLight: "#60A5FA",    // Bleu clair (pour backgrounds subtils)
   
+  shadowLight:"#F1F5F9",
   // Fond et surfaces
   background: "#FFFFFF",      // Fond blanc principal
   surface: "#F8FAFC",        // Surface légèrement grise (cards, inputs)
