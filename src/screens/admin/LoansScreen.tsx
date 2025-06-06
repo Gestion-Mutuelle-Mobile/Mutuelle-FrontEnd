@@ -1349,7 +1349,7 @@ export default function LoansScreen() {
       >
         <BlurView intensity={20} style={StyleSheet.absoluteFillObject} />
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContainer}>
+          <ScrollView style={styles.modalContainer}>
             <LinearGradient
               colors={[YELLOW_THEME.primary, YELLOW_THEME.primaryLight]}
               style={styles.modalHeader}
@@ -1482,7 +1482,7 @@ export default function LoansScreen() {
                 </>
               )}
             </View>
-          </View>
+          </ScrollView>
         </View>
       </Modal>
     </SafeAreaView>
@@ -2194,6 +2194,7 @@ const styles = StyleSheet.create({
   // Loan Detail Section
   loanDetailSection: {
     marginBottom: SPACING.lg,
+    marginTop:SPACING.lg,
   },
   loanDetailHeader: {
     flexDirection: "row",
