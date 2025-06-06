@@ -24,6 +24,7 @@ import { COLORS, SPACING, BORDER_RADIUS, FONT_SIZES } from "../../constants/conf
 import { SolidarityPayment } from "../../types/solidarity.types";
 import { Member } from "../../types/member.types";
 import { useNavigation } from "@react-navigation/native";
+import { useMutuelleConfig } from "../../hooks/useConfig";
 
 
 const { width } = Dimensions.get("window");
@@ -207,6 +208,7 @@ export default function SolidarityScreen() {
   const { data: socialFund, isLoading: loadingFund, isError: errorFund } = useSocialFundCurrent();
   const { data: membersData, isLoading: loadingMembers, isError: errorMembers } = useMembers();
   const { data: currentSession, isLoading: loadingSession, isError: errorSession } = useCurrentSession();
+  const { data: currentConfig, isLoading: loadingConfig, isError: errorConfig } = useMutuelleConfig();
   const createSolidarityPayment = useCreateSolidarityPayment();
   const navigation = useNavigation();
 
@@ -232,7 +234,7 @@ export default function SolidarityScreen() {
   }, [membersData]);
 
   // Montant attendu par membre pour la session courante
-  const montantAttendu = currentSession?.montant_solidarite || 0;
+  const montantAttendu = currentConfig?.montant_solidarite || 0;
 
   // Paiements pour la session courante uniquement
   const sessionSolidarityPayments = useMemo(() => {

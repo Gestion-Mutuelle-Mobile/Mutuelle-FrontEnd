@@ -55,7 +55,7 @@ export default function AdminNavigator() {
         component={SavingsScreen}
         options={{
           presentation: "card",
-          headerShown: true,
+          headerShown: false,
           title: "Gestion des Épargnes",
         }}
       />
