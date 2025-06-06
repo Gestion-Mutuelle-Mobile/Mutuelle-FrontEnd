@@ -544,7 +544,7 @@ export default function RenflouementScreen() {
               </TouchableOpacity>
             </LinearGradient>
 
-            <View style={styles.modalBody}>
+            <ScrollView style={styles.modalBody}>
               <View style={styles.memberInfoSection}>
                 <Text style={styles.modalMemberName}>
                   {currentRenflouement?.membre_info?.nom_complet}
@@ -572,7 +572,7 @@ export default function RenflouementScreen() {
                   </View>
                 )}
               </View>
-            </View>
+            </ScrollView>
           </View>
         </View>
       </Modal>
@@ -918,7 +918,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
     borderRadius: BORDER_RADIUS.xl,
     width: "100%",
-    maxHeight: "90%",
+    height: "60%",
     overflow: "hidden",
     shadowColor: COLORS.shadowDark,
     shadowOffset: { width: 0, height: 10 },
