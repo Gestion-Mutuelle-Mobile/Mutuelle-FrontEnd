@@ -13,6 +13,7 @@ import {
   SafeAreaView,
   RefreshControl,
   StatusBar,
+  ScrollView,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -958,7 +959,7 @@ export default function LoansScreen() {
       >
         <BlurView intensity={20} style={StyleSheet.absoluteFillObject} />
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContainer}>
+          <ScrollView style={styles.modalContainer}>
             <LinearGradient
               colors={[YELLOW_THEME.primary, YELLOW_THEME.primaryLight]}
               style={styles.modalHeader}
@@ -971,7 +972,7 @@ export default function LoansScreen() {
 
             <View style={styles.modalBody}>
               {/* Sélection membre */}
-              <View style={styles.memberSelectionSection}>
+              <ScrollView style={styles.memberSelectionSection}>
                 <Text style={styles.inputLabel}>
                   Sélectionner un membre <Text style={styles.required}>*</Text>
                 </Text>
@@ -986,7 +987,7 @@ export default function LoansScreen() {
                   />
                 </View>
 
-                <View style={styles.membersListModal}>
+                <ScrollView style={styles.membersListModal}>
                   {filteredMembers.slice(0, 3).map((member) => (
                     <TouchableOpacity
                       key={member.id}
@@ -1025,8 +1026,9 @@ export default function LoansScreen() {
                       {search ? "Aucun membre trouvé." : "Aucun membre disponible."}
                     </Text>
                   )}
-                </View>
-              </View>
+                  <View style={{height:15}}></View>
+                </ScrollView>
+              </ScrollView>
 
               {/* Formulaire */}
               <View style={styles.formSection}>
@@ -1082,7 +1084,7 @@ export default function LoansScreen() {
                 </TouchableOpacity>
               </View>
             </View>
-          </View>
+          </ScrollView>
         </View>
       </Modal>
 
@@ -1531,6 +1533,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: YELLOW_THEME.border,
     gap: SPACING.sm,
+    marginBottom:SPACING.md,
     flex: 1,
   },
   searchInput: {
@@ -1900,6 +1903,7 @@ const styles = StyleSheet.create({
   // Member Selection
   memberSelectionSection: {
     marginBottom: SPACING.lg,
+    marginTop:SPACING.lg,
   },
   membersListModal: {
     maxHeight: 200,
