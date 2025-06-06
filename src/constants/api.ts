@@ -1,5 +1,7 @@
 // Point d'entrée centralisé pour toutes les URLs d'API
 
+import { createLoan } from "../services/loan.service";
+
 export const API_BASE_URL = "http://192.168.100.208:8000/api";
 
 export const API_ENDPOINTS = {
@@ -44,8 +46,10 @@ export const API_ENDPOINTS = {
 
   // Emprunts & remboursements
   loans: "/transactions/emprunts/",
+  createLoan: "/administration/gestion-membres/creer_emprunt/",
   loanStats: "/transactions/emprunts/statistiques/",
   repayments: "/transactions/remboursements/",
+  addRepayment: "/administration/gestion-membres/ajouter_remboursement/",
   loanList: "/transactions/emprunts/", // Liste des emprunts
   loanCreate: "/transactions/emprunts/", // Créer emprunt
   loanDetails: (id: string) => `/transactions/emprunts/${id}/`, // Détails emprunt

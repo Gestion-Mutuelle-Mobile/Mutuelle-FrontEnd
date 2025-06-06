@@ -18,7 +18,7 @@ export const fetchLoanById = async (id: string, accessToken: string): Promise<Lo
 };
 
 export const createLoan = async (payload: any, accessToken: string): Promise<Loan> => {
-  const { data } = await axios.post<Loan>(API_BASE_URL + API_ENDPOINTS.loans, payload, {
+  const { data } = await axios.post<Loan>(API_BASE_URL + API_ENDPOINTS.createLoan, payload, {
     headers: { Authorization: `Bearer ${accessToken}` }
   });
   return data;
@@ -33,7 +33,7 @@ export const fetchRepayments = async (accessToken: string, params?: Record<strin
 };
 
 export const createRepayment = async (payload: any, accessToken: string): Promise<Repayment> => {
-  const { data } = await axios.post<Repayment>(API_BASE_URL + API_ENDPOINTS.repayments, payload, {
+  const { data } = await axios.post<Repayment>(API_BASE_URL + API_ENDPOINTS.addRepayment, payload, {
     headers: { Authorization: `Bearer ${accessToken}` }
   });
   return data;
