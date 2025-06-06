@@ -352,6 +352,7 @@ export default function AssistanceScreen() {
             "Erreur",
             err?.response?.data?.error || "Impossible d'enregistrer l'assistance."
           );
+          console.log("REPONSE A LA CREATION : ",err)
         },
       }
     );
@@ -498,7 +499,7 @@ export default function AssistanceScreen() {
         </View>
       ) : (
         // Liste des assistances
-        <View style={{ paddingHorizontal: SPACING.lg }}>
+        <View style={{ paddingHorizontal: SPACING.lg ,marginVertical:SPACING.lg }}>
           {filteredAssistances.map((item, index) => (
             <View key={item.id} style={{ marginBottom: SPACING.md }}>
               <AssistanceCard item={item} />
@@ -908,14 +909,14 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.surface,
     borderRadius: BORDER_RADIUS.lg,
     padding: SPACING.md,
-    borderLeftWidth: 4,
+    // borderLeftWidth: 4,
     borderWidth: 1,
     borderColor: COLORS.border,
     shadowColor: COLORS.shadowLight,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+    // shadowRadius: BORDER_RADIUS.lg,
+    // elevation: 2,
   },
   cardHeader: {
     flexDirection: "row",

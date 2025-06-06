@@ -357,7 +357,7 @@ export default function FinancialReportsScreen() {
       .filter(a => a?.statut === "PAYEE")
       .reduce((sum, a) => sum + (a?.montant ?? 0), 0);
 
-    const situationNette = tresorTotal + fondsSocialTotal - empruntsTotal - (renflouementDu - renflouementPaye);
+    const situationNette = tresorTotal + fondsSocialTotal - empruntsTotal ;
 
     return {
       empruntsEnCours,

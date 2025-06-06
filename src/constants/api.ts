@@ -46,6 +46,31 @@ export const API_ENDPOINTS = {
   loans: "/transactions/emprunts/",
   loanStats: "/transactions/emprunts/statistiques/",
   repayments: "/transactions/remboursements/",
+  loanList: "/transactions/emprunts/", // Liste des emprunts
+  loanCreate: "/transactions/emprunts/", // Créer emprunt
+  loanDetails: (id: string) => `/transactions/emprunts/${id}/`, // Détails emprunt
+  // Statuts
+  loanStatusInProgress: "?statut=EN_COURS",
+  loanStatusInProgressFlag: "?en_cours=true",
+  loanStatusRepaid: "?rembourse=true",
+  loanStatusOverdue: "?en_retard=true",
+
+  // Montants
+  loanAmountMin: "?montant_emprunte_min=100000",
+  loanAmountMax: "?montant_emprunte_max=1000000",
+  loanTotalMin: "?montant_total_min=200000",
+  loanInterestRateMin: "?taux_interet_min=2.5",
+
+  // Pourcentages de remboursement
+  loanRepaymentPercentageMin: "?pourcentage_rembourse_min=50",
+  loanRepaymentPercentageMax: "?pourcentage_rembourse_max=80",
+  loanAlmostRepaid: "?presque_rembourse=true", // >80% remboursé
+  loanBarelyRepaid: "?peu_rembourse=true",     // <20% remboursé
+
+  // Dates
+  loanThisMonth: "?this_month=true",
+  loanThisYear: "?this_year=true",
+  loanDateAfter: "?date_emprunt_after=2024-01-01",
 
   // Renflouements
   renflouements: "/transactions/renflouements/",

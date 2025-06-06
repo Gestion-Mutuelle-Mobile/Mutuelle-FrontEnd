@@ -421,6 +421,8 @@ export default function RenflouementScreen() {
             ItemSeparatorComponent={() => <View style={{ height: SPACING.md }} />}
           />
         )}
+
+        <View style={{height:70}}></View>
       </ScrollView>
 
       {/* Modal Paiement */}
@@ -695,6 +697,7 @@ const styles = StyleSheet.create({
     borderRadius: BORDER_RADIUS.lg,
     padding: SPACING.md,
     marginHorizontal: SPACING.lg,
+    marginVertical:SPACING.lg,
     borderLeftWidth: 4,
     borderWidth: 1,
     borderColor: COLORS.border,
