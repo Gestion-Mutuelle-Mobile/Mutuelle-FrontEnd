@@ -25,6 +25,10 @@ import { COLORS, SPACING, BORDER_RADIUS, FONT_SIZES } from "../../constants/conf
 import { Loan, Repayment, LoanStatus } from "../../types/loan.types";
 import { Member } from "../../types/member.types";
 import { useNavigation } from "@react-navigation/native";
+import { useAdminDashboard } from "../../hooks/useDashboard";
+import { min } from "lodash";
+// Feedback visuel et haptique
+import { Vibration } from 'react-native';
 
 const { width } = Dimensions.get("window");
 
@@ -361,8 +365,10 @@ export default function LoansScreen() {
 
   // Hooks de données
   const { data: loansData, isLoading: loadingLoans, isError: errorLoans, refetch: refetchLoans } = useLoans();
-  const { data: membersData, isLoading: loadingMembers, isError: errorMembers } = useMembers({ statut: "EN_REGLE" });
+  const { data: membersData, isLoading: loadingMembers, isError: errorMembers } = useMembers();
   const { data: currentSession, isLoading: loadingSession, isError: errorSession } = useCurrentSession();
+  const { data: dashboardData } = useAdminDashboard();
+
   const createLoan = useCreateLoan();
   const createRepayment = useCreateRepayment();
   
@@ -387,6 +393,19 @@ export default function LoansScreen() {
     }
     return [];
   }, [membersData]);
+  // Ajoute cette interface ou étend Member existant
+    interface MemberWithFinancials  {
+      donnees_financieres?: {
+        epargne: {
+          epargne_totale: number;
+        };
+        emprunt: {
+          montant_max_empruntable: number;
+          a_emprunt_en_cours: boolean;
+          montant_emprunt_en_cours: number;
+        };
+      };
+    }
 
   // Transformation des données
   const loansWithStats: LoanWithStats[] = useMemo(() => {
@@ -542,20 +561,58 @@ export default function LoansScreen() {
       Alert.alert("Erreur", "Aucun membre sélectionné.");
       return;
     }
-
+  
     if (!loanAmount.trim() || isNaN(Number(loanAmount)) || Number(loanAmount) <= 0) {
       Alert.alert("Erreur", "Veuillez saisir un montant valide.");
       return;
     }
-
+  
+    const montant = Number(loanAmount);
+    const maxEmpruntable = selectedMember.donnees_financieres?.emprunt?.montant_max_empruntable || 0;
+    const liquiditesDisponibles = dashboardData?.tresor?.cumul_total_epargnes || 0;
+  
+    // Vérifications de sécurité
+    if (montant > maxEmpruntable) {
+      Alert.alert(
+        "Montant trop élevé",
+        `Le montant demandé (${formatCurrency(montant)}) dépasse le maximum empruntable pour ce membre (${formatCurrency(maxEmpruntable)}).`
+      );
+      return;
+    }
+  
+    if (montant > liquiditesDisponibles) {
+      Alert.alert(
+        "Liquidités insuffisantes",
+        `Le montant demandé (${formatCurrency(montant)}) dépasse les liquidités disponibles (${formatCurrency(liquiditesDisponibles)}).`
+      );
+      return;
+    }
+  
     if (!currentSession?.id) {
       Alert.alert("Erreur", "Aucune session courante disponible.");
       return;
     }
+  
+    // Confirmation si montant important
+    if (montant > maxEmpruntable * 0.8) {
+      Alert.alert(
+        "Confirmation",
+        `Vous vous apprêtez à accorder un emprunt de ${formatCurrency(montant)} à ${selectedMember.utilisateur?.nom_complet}. Continuer ?`,
+        [
+          { text: "Annuler", style: "cancel" },
+          { text: "Confirmer", onPress: createLoanAction }
+        ]
+      );
+    } else {
+      createLoanAction();
+    }
+  };
 
+
+  const createLoanAction = () => {
     createLoan.mutate(
       {
-        membre: selectedMember.id,
+        membre: selectedMember?.id,
         session: currentSession.id,
         montant_emprunte: Number(loanAmount),
         notes: loanNotes.trim(),
@@ -972,6 +1029,7 @@ export default function LoansScreen() {
 
             <View style={styles.modalBody}>
               {/* Sélection membre */}
+             {/* Sélection membre améliorée */}
               <ScrollView style={styles.memberSelectionSection}>
                 <Text style={styles.inputLabel}>
                   Sélectionner un membre <Text style={styles.required}>*</Text>
@@ -987,48 +1045,91 @@ export default function LoansScreen() {
                   />
                 </View>
 
-                <ScrollView style={styles.membersListModal}>
-                  {filteredMembers.slice(0, 3).map((member) => (
-                    <TouchableOpacity
-                      key={member.id}
-                      style={[
-                        styles.memberCardModal,
-                        { 
-                          backgroundColor: selectedMember?.id === member.id 
-                            ? YELLOW_THEME.surfaceLight 
-                            : COLORS.surface,
-                          borderColor: selectedMember?.id === member.id 
-                            ? YELLOW_THEME.primary 
-                            : COLORS.border
-                        }
-                      ]}
-                      onPress={() => setSelectedMember(member)}
-                    >
-                      <View style={styles.memberModalInfo}>
-                        <Text style={styles.memberModalName}>
-                          {member.utilisateur?.nom_complet || "Nom non disponible"}
-                        </Text>
-                        <Text style={styles.memberModalNumber}>
-                          {member.numero_membre}
-                        </Text>
-                        <Text style={styles.memberModalEmail}>
-                          {member.utilisateur?.email || ""}
-                        </Text>
-                      </View>
-                      {selectedMember?.id === member.id && (
-                        <Ionicons name="checkmark-circle" size={24} color={YELLOW_THEME.primary} />
-                      )}
-                    </TouchableOpacity>
-                  ))}
+                
+                  {filteredMembers.slice(0, 3).map((member) => {
+                    const financials = member.donnees_financieres;
+                    const epargneTotal = financials?.epargne?.epargne_totale || 0;
+                    const maxEmpruntable = financials?.emprunt?.montant_max_empruntable || 0;
+                    const aEmpruntEnCours = financials?.emprunt?.a_emprunt_en_cours || false;
+                    const empruntEnCours = financials?.emprunt?.montant_emprunt_en_cours || 0;
+                    const peutEmprunter = !aEmpruntEnCours && maxEmpruntable > 0;
+
+                    return (
+                      <TouchableOpacity
+                        key={member.id}
+                        style={[
+                          styles.memberCardModal,
+                          { 
+                            backgroundColor: selectedMember?.id === member.id 
+                              ? YELLOW_THEME.surfaceLight 
+                              : COLORS.surface,
+                            borderColor: selectedMember?.id === member.id 
+                              ? YELLOW_THEME.primary 
+                              : peutEmprunter ? COLORS.border : COLORS.error,
+                            opacity: peutEmprunter ? 1 : 0.6
+                          }
+                        ]}
+                        onPress={() => peutEmprunter && setSelectedMember(member)}
+                        disabled={!peutEmprunter}
+                      >
+                        <View style={styles.memberModalInfo}>
+                          <Text style={styles.memberModalName}>
+                            {member.utilisateur?.nom_complet || "Nom non disponible"}
+                          </Text>
+                          <Text style={styles.memberModalNumber}>
+                            {member.numero_membre}
+                          </Text>
+                          <Text style={styles.memberModalEmail}>
+                            {member.utilisateur?.email || ""}
+                          </Text>
+                          
+                          {/* Infos financières */}
+                          <View style={styles.memberFinancialInfo}>
+                            <View style={styles.financialInfoRow}>
+                              <Ionicons name="wallet" size={14} color={YELLOW_THEME.primary} />
+                              <Text style={styles.financialInfoText}>
+                                Épargne: {formatCurrency(epargneTotal)}
+                              </Text>
+                            </View>
+                            <View style={styles.financialInfoRow}>
+                              <Ionicons 
+                                name={peutEmprunter ? "checkmark-circle" : "close-circle"} 
+                                size={14} 
+                                color={peutEmprunter ? COLORS.success : COLORS.error} 
+                              />
+                              <Text style={[
+                                styles.financialInfoText,
+                                { color: peutEmprunter ? COLORS.success : COLORS.error }
+                              ]}>
+                                {aEmpruntEnCours 
+                                  ? `Emprunt en cours: ${formatCurrency(empruntEnCours)}`
+                                  : `Max empruntable: ${formatCurrency(min([maxEmpruntable,dashboardData?.tresor.cumul_total_epargnes]))}`
+                                }
+                              </Text>
+                            </View>
+                          </View>
+                        </View>
+                        
+                        {selectedMember?.id === member.id && peutEmprunter && (
+                          <Ionicons name="checkmark-circle" size={24} color={YELLOW_THEME.primary} />
+                        )}
+                        {!peutEmprunter && (
+                          <Ionicons name="lock-closed" size={24} color={COLORS.error} />
+                        )}
+                      </TouchableOpacity>
+                    );
+                  })}
                   
                   {filteredMembers.length === 0 && (
                     <Text style={styles.noMembersText}>
                       {search ? "Aucun membre trouvé." : "Aucun membre disponible."}
                     </Text>
                   )}
-                  <View style={{height:15}}></View>
+
+                  <View style={{height:25}}></View>
                 </ScrollView>
-              </ScrollView>
+
+              
 
               {/* Formulaire */}
               <View style={styles.formSection}>
@@ -1036,13 +1137,41 @@ export default function LoansScreen() {
                   Montant à emprunter <Text style={styles.required}>*</Text>
                 </Text>
                 <TextInput
-                  style={styles.input}
-                  value={loanAmount}
-                  onChangeText={setLoanAmount}
-                  placeholder="Montant en FCFA"
-                  keyboardType="numeric"
-                  placeholderTextColor={COLORS.textLight}
-                />
+  style={[
+    styles.input,
+    {
+      borderColor: (selectedMember && Number(loanAmount) > (selectedMember.donnees_financieres?.emprunt?.montant_max_empruntable || 0) || (selectedMember && Number(loanAmount) > (dashboardData?.tresor.cumul_total_epargnes || 0) ))
+        ? COLORS.error
+        : YELLOW_THEME.border
+    }
+  ]}
+  value={loanAmount}
+  onChangeText={(text) => {
+    setLoanAmount(text);
+    
+    // Validation en temps réel
+    const montant = Number(text);
+    const maxEmpruntable = min([selectedMember?.donnees_financieres?.emprunt?.montant_max_empruntable,dashboardData?.tresor.cumul_total_epargnes]) || 0;
+    
+    
+    if (montant > maxEmpruntable && selectedMember) {
+      // Feedback visuel simple avec vibration native
+      
+      // Vibration courte d'erreur (pattern: vibrer 100ms, pause 50ms, vibrer 100ms)
+      Vibration.vibrate([100, 50, 100]);
+      
+      // Log pour debug
+      console.warn(`Montant dépassé: ${formatCurrency(montant)} > ${formatCurrency(maxEmpruntable)}`);
+      
+      // Optionnel: Feedback visuel temporaire (tu peux ajouter un state pour ça)
+      // setShowErrorFeedback(true);
+      // setTimeout(() => setShowErrorFeedback(false), 2000);
+    }
+  }}
+  placeholder={`Montant max: ${selectedMember ? formatCurrency(min([selectedMember?.donnees_financieres?.emprunt?.montant_max_empruntable,dashboardData?.tresor.cumul_total_epargnes])|| 0) : 'Sélectionnez un membre'}`}
+  keyboardType="numeric"
+  placeholderTextColor={COLORS.textLight}
+/>
 
                 <Text style={styles.inputLabel}>Notes (optionnel)</Text>
                 <TextInput
@@ -1906,7 +2035,8 @@ const styles = StyleSheet.create({
     marginTop:SPACING.lg,
   },
   membersListModal: {
-    maxHeight: 200,
+    height: 290,
+    overflow:'scroll',
   },
   memberCardModal: {
     flexDirection: "row",
@@ -2213,4 +2343,60 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "white",
   },
+  // Member Financial Info
+memberFinancialInfo: {
+  marginTop: SPACING.sm,
+  gap: SPACING.xs,
+},
+financialInfoRow: {
+  flexDirection: "row",
+  alignItems: "center",
+  gap: SPACING.xs,
+},
+financialInfoText: {
+  fontSize: FONT_SIZES.sm,
+  color: YELLOW_THEME.text,
+},
+
+// Selected Member Summary
+selectedMemberSummary: {
+  backgroundColor: YELLOW_THEME.surface,
+  padding: SPACING.md,
+  borderRadius: BORDER_RADIUS.lg,
+  marginTop: SPACING.md,
+  borderWidth: 1,
+  borderColor: YELLOW_THEME.border,
+},
+selectedMemberTitle: {
+  fontSize: FONT_SIZES.md,
+  fontWeight: "bold",
+  color: YELLOW_THEME.textDark,
+  marginBottom: SPACING.sm,
+},
+selectedMemberDetails: {
+  gap: SPACING.sm,
+},
+selectedMemberName: {
+  fontSize: FONT_SIZES.md,
+  fontWeight: "600",
+  color: YELLOW_THEME.primary,
+  marginBottom: SPACING.xs,
+},
+selectedMemberFinancials: {
+  gap: SPACING.xs,
+},
+summaryRow: {
+  flexDirection: "row",
+  justifyContent: "space-between",
+  alignItems: "center",
+},
+summaryLabel: {
+  fontSize: FONT_SIZES.sm,
+  color: YELLOW_THEME.text,
+},
+summaryValue: {
+  fontSize: FONT_SIZES.sm,
+  fontWeight: "600",
+  color: YELLOW_THEME.textDark,
+},
 });
