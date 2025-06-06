@@ -43,7 +43,7 @@ export default function MemberNavigator() {
         component={NotificationsScreen}
         options={{
           presentation: "modal",
-          headerShown: true,
+          headerShown: false,
           title: "Notifications",
         }}
       />
@@ -53,7 +53,7 @@ export default function MemberNavigator() {
         component={ChatbotScreen}
         options={{
           presentation: "modal",
-          headerShown: true,
+          headerShown: false,
           title: "Assistant",
         }}
       />

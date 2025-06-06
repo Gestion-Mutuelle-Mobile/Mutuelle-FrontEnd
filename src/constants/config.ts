@@ -30,6 +30,7 @@ export const COLORS = {
   
   // États et feedback
   error: "#DC2626",          // Rouge pour erreurs
+  errorLight:"#f16060",
   success: "#059669",        // Vert pour succès
   warning: "#D97706",        // Orange pour avertissements
   info: "#2563EB",           // Bleu pour informations
@@ -64,6 +65,10 @@ export const GRADIENTS = {
   card: [COLORS.background, COLORS.surface],
   success: [COLORS.success, "#047857"],
   error: [COLORS.error, "#B91C1C"],
+};
+export const GEMINI_CONFIG = {
+  API_KEY: "AIzaSyByKNX2lB9Nz02QqAlflC9uBYvOqOF6RRU", // 🔧 Remplace par ta vraie clé
+  MODEL: "gemini-2.0-flash",
 };
 
 export const PIN_LENGTH = 4;

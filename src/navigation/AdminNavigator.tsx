@@ -126,7 +126,7 @@ export default function AdminNavigator() {
         component={ChatbotScreen}
         options={{
           presentation: "modal",
-          headerShown: true,
+          headerShown: false,
           title: "Assistant",
         }}
       />
