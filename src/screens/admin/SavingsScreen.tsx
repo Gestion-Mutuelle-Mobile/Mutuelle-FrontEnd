@@ -65,7 +65,7 @@ const TABS: TabConfig[] = [
 
 // 🎯 Formatage monétaire sécurisé
 const formatCurrency = (amount: number | undefined | null): string => {
-  if (typeof amount !== "number" || isNaN(amount)) return "0 FCFA";
+  if (!amount || isNaN(amount)) return "0 FCFA";
   return new Intl.NumberFormat('fr-FR', {
     style: 'currency',
     currency: 'XAF',

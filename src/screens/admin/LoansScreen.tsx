@@ -98,7 +98,7 @@ const TABS: TabConfig[] = [
 
 // 🎯 Formatage monétaire sécurisé
 const formatCurrency = (amount: number | undefined | null): string => {
-  if (typeof amount !== "number" || isNaN(amount)) return "0 FCFA";
+  if (!amount|| isNaN(amount)) return "0 FCFA";
   return new Intl.NumberFormat('fr-FR', {
     style: 'currency',
     currency: 'XAF',
@@ -1226,7 +1226,7 @@ export default function LoansScreen() {
       >
         <BlurView intensity={20} style={StyleSheet.absoluteFillObject} />
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContainer}>
+          <ScrollView style={styles.modalContainer}>
             <LinearGradient
               colors={[YELLOW_THEME.primary, YELLOW_THEME.primaryLight]}
               style={styles.modalHeader}
@@ -1336,7 +1336,7 @@ export default function LoansScreen() {
                 </TouchableOpacity>
               </View>
             </View>
-          </View>
+          </ScrollView>
         </View>
       </Modal>
 
@@ -2140,6 +2140,7 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.lg,
     borderWidth: 1,
     borderColor: YELLOW_THEME.border,
+    marginTop:15,
   },
   loanInfoHeader: {
     flexDirection: "row",

@@ -294,7 +294,7 @@ const MemberDetailModal = ({ visible, member, onClose, financialData, loading }:
         size={20} 
         color={financialData.resume_financier.situation_nette >= 0 ? COLORS.success : COLORS.error} 
       />
-      <Text style={styles.summaryLabel}>Situation nette</Text>
+      <Text style={styles.summaryLabel}>Situation</Text>
       <Text style={[styles.summaryValue, { 
         color: financialData.resume_financier.situation_nette >= 0 ? COLORS.success : COLORS.error 
       }]}>
@@ -1567,7 +1567,7 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.xs,
   },
   summaryValue: {
-    fontSize: FONT_SIZES.md,
+    fontSize: 11,
     fontWeight: "bold",
   },
 
