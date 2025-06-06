@@ -75,7 +75,7 @@ export default function AdminNavigator() {
         component={SolidarityScreen}
         options={{
           presentation: "card",
-          headerShown: true,
+          headerShown: false,
           title: "Fonds Social & Solidarité",
         }}
       />
