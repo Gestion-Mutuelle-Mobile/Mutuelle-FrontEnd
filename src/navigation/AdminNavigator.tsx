@@ -85,7 +85,7 @@ export default function AdminNavigator() {
         component={LoansScreen}
         options={{
           presentation: "card",
-          headerShown: true,
+          headerShown: false,
           title: "Gestion des Emprunts",
         }}
       />
