@@ -65,7 +65,7 @@ export default function AdminNavigator() {
         component={AssistanceScreen}
         options={{
           presentation: "card",
-          headerShown: true,
+          headerShown: false,
           title: "Gestion des Assistances",
         }}
       />
