@@ -51,7 +51,7 @@ interface SavingsStats {
 }
 
 interface TabConfig {
-  key: 'overview' | 'members' | 'transactions';
+  key: 'members'| 'overview'  | 'transactions';
   title: string;
   icon: string;
 }
@@ -151,7 +151,7 @@ const MemberSavingsCard = ({ member, onPress, onAddSaving }: MemberSavingsCardPr
         <View style={styles.amountSection}>
           <Text style={styles.amountLabel}>Épargne totale</Text>
           <Text style={[styles.amountValue, { color: getSavingsLevelColor() }]}>
-            {formatCurrency(member.total_epargne)}
+            {formatCurrency(member.total_epargne)} 
           </Text>
         </View>
         <View style={styles.amountRow}>
@@ -353,9 +353,9 @@ export default function SavingsScreen() {
         nom_complet: member.utilisateur?.nom_complet || "Nom non disponible",
         email: member.utilisateur?.email || "",
         statut: member.statut,
-        total_epargne: totalEpargne,
+        total_epargne: member.donnees_financieres.epargne.epargne_totale || 0,
         total_depots: memberData.depots,
-        total_retraits: memberData.retraits,
+        total_retraits: member.donnees_financieres.emprunt.montant_restant_a_rembourser,
         nombre_transactions: memberData.transactions.length,
         derniere_transaction: derniereTransaction?.date_transaction,
       };
