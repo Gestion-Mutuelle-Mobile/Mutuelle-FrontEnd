@@ -27,7 +27,7 @@ type ModalState = boolean | string;
 
 // 🎯 Formatage monétaire sécurisé
 const formatCurrency = (amount: number | undefined | null): string => {
-  if (typeof amount !== "number" || isNaN(amount)) return "0 FCFA";
+  if ( isNaN(amount)) return "0 FCFA";
   return new Intl.NumberFormat('fr-FR', {
     style: 'currency',
     currency: 'XAF',
@@ -445,7 +445,7 @@ export default function RenflouementScreen() {
               </TouchableOpacity>
             </LinearGradient>
 
-            <View style={styles.modalBody}>
+            <ScrollView style={styles.modalBody}>
               <View style={styles.memberInfoSection}>
                 <Text style={styles.modalMemberName}>
                   {currentRenflouement?.membre_info?.nom_complet}
@@ -515,7 +515,7 @@ export default function RenflouementScreen() {
                   )}
                 </TouchableOpacity>
               </View>
-            </View>
+            </ScrollView>
           </View>
         </View>
       </Modal>
@@ -1014,6 +1014,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     gap: SPACING.md,
     marginTop: SPACING.lg,
+    marginBottom:SPACING.lg,
   },
   modalButton: {
     flex: 1,
