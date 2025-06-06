@@ -33,7 +33,7 @@ export default function MemberNavigator() {
         component={ProfileScreen}
         options={{
           presentation: "modal",
-          headerShown: true,
+          headerShown: false,
           title: "Mon Profil",
         }}
       />

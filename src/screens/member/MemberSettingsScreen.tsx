@@ -3,9 +3,11 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from "rea
 import { COLORS, SPACING, BORDER_RADIUS, FONT_SIZES } from "../../constants/config";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuthContext } from "../../context/AuthContext";
+import { useNavigation } from "@react-navigation/native";
 
 export default function MemberSettingsScreen() {
   const { user, logout } = useAuthContext();
+  const navigation =useNavigation();
 
   const handleLogout = async () => {
     Alert.alert(
@@ -50,7 +52,10 @@ export default function MemberSettingsScreen() {
 
       {/* Actions */}
       <View style={styles.section}>
-        <TouchableOpacity style={styles.settingItem}>
+        <TouchableOpacity style={styles.settingItem} 
+        onPress={()=>{
+          navigation.navigate("Profile");
+        }}>
           <View style={styles.settingLeft}>
             <Ionicons name="person-outline" size={20} color={COLORS.primary} />
             <Text style={styles.settingText}>Modifier mon profil</Text>
@@ -58,7 +63,9 @@ export default function MemberSettingsScreen() {
           <Ionicons name="chevron-forward" size={20} color={COLORS.textSecondary} />
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.settingItem}>
+        <TouchableOpacity style={styles.settingItem} onPress={()=>{
+          navigation.navigate("Profile");
+        }}>
           <View style={styles.settingLeft}>
             <Ionicons name="lock-closed-outline" size={20} color={COLORS.primary} />
             <Text style={styles.settingText}>Changer le mot de passe</Text>
@@ -66,7 +73,11 @@ export default function MemberSettingsScreen() {
           <Ionicons name="chevron-forward" size={20} color={COLORS.textSecondary} />
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.settingItem}>
+        <TouchableOpacity style={styles.settingItem} 
+        onPress={()=>{
+          navigation.navigate("Pin");
+        }}
+        >
           <View style={styles.settingLeft}>
             <Ionicons name="keypad-outline" size={20} color={COLORS.primary} />
             <Text style={styles.settingText}>Changer le code PIN</Text>
