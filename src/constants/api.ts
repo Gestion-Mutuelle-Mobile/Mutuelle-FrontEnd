@@ -54,7 +54,7 @@ export const API_ENDPOINTS = {
 
   // Assistances
   assistances: "/transactions/assistances/",
-  assistanceTypes: "/core/types-assistance/",
+  assistanceTypes: "/core/types-assistance/", 
 
   // Admin
   adminDashboard: "/administration/dashboard/dashboard_complet/",

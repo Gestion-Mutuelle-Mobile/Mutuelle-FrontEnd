@@ -364,7 +364,7 @@ export default function AdminDashboardScreen() {
               <View style={[styles.statCard, { backgroundColor: "#38A3A515" }]}>
                 <Ionicons name="cash" size={24} color="#38A3A5" />
                 <Text style={[styles.statValue, { color: "#38A3A5" }]}>
-                  {(stats.fondsTotal / 1000000).toFixed(1)}M
+                  {(stats.fondsTotal / 1000).toFixed(1)}K
                 </Text>
                 <Text style={styles.statLabel}>Fonds Social</Text>
               </View>
@@ -372,7 +372,7 @@ export default function AdminDashboardScreen() {
               <View style={[styles.statCard, { backgroundColor: "#B5179E15" }]}>
                 <Ionicons name="trending-up" size={24} color="#B5179E" />
                 <Text style={[styles.statValue, { color: "#B5179E" }]}>
-                  {(stats.epargneTotal / 1000000).toFixed(1)}M
+                  {(stats.epargneTotal / 1000).toFixed(1)}K
                 </Text>
                 <Text style={styles.statLabel}>Épargnes</Text>
               </View>
@@ -683,7 +683,7 @@ const styles = StyleSheet.create({
     borderColor: COLORS.border,
   },
   statValue: {
-    fontSize: FONT_SIZES.xl,
+    fontSize: 16.5,
     fontWeight: "bold",
     marginVertical: SPACING.xs,
   },

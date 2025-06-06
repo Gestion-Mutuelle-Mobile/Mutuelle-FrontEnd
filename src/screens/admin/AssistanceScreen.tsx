@@ -38,7 +38,7 @@ interface AssistanceType {
 
 // 🎯 Formatage monétaire sécurisé
 const formatCurrency = (amount: number | undefined | null): string => {
-  if (typeof amount !== "number" || isNaN(amount)) return "0 FCFA";
+  if ( isNaN(amount)) return "0 FCFA";
   return new Intl.NumberFormat('fr-FR', {
     style: 'currency',
     currency: 'XAF',
@@ -654,7 +654,7 @@ export default function AssistanceScreen() {
                               <View style={styles.selectorItemHeader}>
                                 <Text style={styles.selectorItemName}>{type.nom}</Text>
                                 <Text style={[styles.typeAmount, { color: COLORS.primary }]}>
-                                  {formatCurrency(type.montant)}
+                                  {formatCurrency(type.montant)} 
                                 </Text>
                               </View>
                               {type.description && (

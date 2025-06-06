@@ -670,7 +670,7 @@ export default function FinancialReportsScreen() {
           value={formatCurrency(stats.situationNette)}
           subtitle="Bilan global"
           icon={stats.situationNette >= 0 ? "trending-up" : "trending-down"}
-          gradient={stats.situationNette >= 0 ? [COLORS.success, "#57CC99"] : [COLORS.error, "#F87171"]}
+          gradient={stats.situationNette >= 0 ? [COLORS.grey, "#363737FF"] : [COLORS.error, "#F87171"]}
           trend={stats.situationNette >= 0 ? "up" : "down"}
         />
       </View>
