@@ -343,7 +343,7 @@ const RepaymentCard = ({ repayment }: RepaymentCardProps) => (
 
 // 🎯 Composant principal
 export default function LoansScreen() {
-  const [activeTab, setActiveTab] = useState<'overview' | 'active' | 'completed' | 'overdue' | 'repayments'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'active' | 'completed' | 'overdue' | 'repayments'>('active');
   const [search, setSearch] = useState("");
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showRepaymentModal, setShowRepaymentModal] = useState(false);
@@ -365,7 +365,7 @@ export default function LoansScreen() {
 
   // Hooks de données
   const { data: loansData, isLoading: loadingLoans, isError: errorLoans, refetch: refetchLoans } = useLoans();
-  const { data: membersData, isLoading: loadingMembers, isError: errorMembers } = useMembers();
+  const { data: membersData, isLoading: loadingMembers, isError: errorMembers } = useMembers({statut:'EN_REGLE'});
   const { data: currentSession, isLoading: loadingSession, isError: errorSession } = useCurrentSession();
   const { data: dashboardData } = useAdminDashboard();
 
