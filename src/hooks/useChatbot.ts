@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { chatbotService, ChatMessage, ChatbotContext } from '../services/chatbot.service';
 import { useCurrentUser } from './useAuth';
 import { useAdminDashboard } from './useDashboard';
-import { useMemberFinance } from './useMember';
+import { useMemberDetailByUser, useMemberFinance } from './useMember';
 import { useCurrentSession } from './useSession';
 import { useMutuelleConfig } from './useConfig'; // 🔧 AJOUT du hook config
 import { useCurrentExercise } from './useExercise';
@@ -16,6 +16,7 @@ export function useChatbot() {
 
   // Hooks pour récupérer les données avec gestion d'erreurs
   const { data: user, isLoading: userLoading, error: userError } = useCurrentUser();
+  const { data: member, isLoading: loadingMember, error: errorMember, refetch } = useMemberDetailByUser(user?.id || "");
   const { data: dashboardData, error: dashboardError } = useAdminDashboard();
   const { data: sessionData, error: sessionError } = useCurrentSession();
   const { data: exerciseData, error: exerciseError } = useCurrentExercise();
@@ -25,7 +26,7 @@ export function useChatbot() {
   const { 
     data: memberData, 
     error: memberError 
-  } = useMemberFinance(user?.is_membre ? user.id : '');
+  } = useMemberFinance(user?.is_membre ? (member? member.id :'') : '');
 
   // Génération du contexte avec gestion d'erreurs
   const generateContext = useCallback((): ChatbotContext => {
@@ -43,7 +44,7 @@ export function useChatbot() {
       user: !!user,
       userRole: user?.role,
       isMembre: user?.is_membre,
-      memberData: !!memberData,
+      memberData: !!member,
       dashboardData: !!dashboardData,
       sessionData: !!sessionData,
       exerciseData: !!exerciseData,
@@ -52,14 +53,14 @@ export function useChatbot() {
 
     return {
       userInfo: user || null,
-      memberData: (user?.is_membre && memberData) ? memberData : null,
+      memberData: (user?.is_membre && member) ? member : null,
       dashboardData: dashboardData || null,
       sessionData: sessionData || null,
       exerciseData: exerciseData || null,
       configData: configData || null, // 🔧 UTILISE LA VRAIE CONFIG
     };
   }, [
-    user, memberData, dashboardData, sessionData, exerciseData, configData, // 🔧 AJOUT configData
+    user, member, dashboardData, sessionData, exerciseData, configData, // 🔧 AJOUT configData
     userError, memberError, dashboardError, sessionError, exerciseError, configError
   ]);
 
@@ -268,7 +269,7 @@ export function useChatbot() {
       userRole: user?.role,
       isMembre: user?.is_membre,
       hasData: {
-        member: !!memberData,
+        member: !!member,
         dashboard: !!dashboardData,
         session: !!sessionData,
         exercise: !!exerciseData,
