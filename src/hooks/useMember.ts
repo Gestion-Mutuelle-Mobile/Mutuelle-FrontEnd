@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { fetchMembers, fetchMemberById, fetchMemberFullData, addInscriptionPayment, createFullMember } from "../services/member.service";
+import { fetchMembers, fetchMemberById, fetchMemberFullData, addInscriptionPayment, createFullMember, fetchMemberByUserId } from "../services/member.service";
 import { Member } from "../types/member.types";
 import { getStoredAccessToken } from "../services/auth.service";
 
@@ -23,6 +23,17 @@ export function useMemberDetail(id: string) {
       const token = await getStoredAccessToken();
       if (!token) throw new Error("Token manquant");
       return fetchMemberById(id, token);
+    },
+    enabled: !!id,
+  });
+}
+export function useMemberDetailByUser(id: string) {
+  return useQuery<Member>({
+    queryKey: ["member", id],
+    queryFn: async () => {
+      const token = await getStoredAccessToken();
+      if (!token) throw new Error("Token manquant");
+      return fetchMemberByUserId(id, token);
     },
     enabled: !!id,
   });

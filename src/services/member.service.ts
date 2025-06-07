@@ -29,6 +29,29 @@ export const fetchMemberById = async (id: string, accessToken: string): Promise<
   return data;
 };
 
+export const fetchMemberByUserId = async (id: string, accessToken: string): Promise<Member> => {
+  const { data } = await axios.get<{
+    count: number;
+    next: string | null;
+    previous: string | null;
+    results: Member[];
+  }>(API_BASE_URL + API_ENDPOINTS.memberDetailsByUser(id), {
+    headers: { Authorization: `Bearer ${accessToken}` }
+  });
+  
+  console.log("📡 Réponse API complète:", data);
+  
+  // 🔧 CORRECTION: Extraire le premier membre des résultats
+  if (!data.results || data.results.length === 0) {
+    throw new Error("Aucun membre trouvé pour cet utilisateur");
+  }
+  
+  const member = data.results[0];
+  console.log("✅ Membre extrait:", member);
+  console.log("💰 Données financières:", member.donnees_financieres);
+  
+  return member;
+};
 export const fetchMemberFullData = async (id: string, accessToken: string) => {
   const { data } = await axios.get(API_BASE_URL + API_ENDPOINTS.memberFullData(id), {
     headers: { Authorization: `Bearer ${accessToken}` }

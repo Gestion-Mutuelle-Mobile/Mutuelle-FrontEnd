@@ -20,6 +20,7 @@ export const API_ENDPOINTS = {
   members: "/core/membres/",
   memberDetails: (id: string) => `/core/membres/${id}/`,
   memberFullData: (id: string) => `/core/membres/${id}/donnees_completes/`,
+  memberDetailsByUser: (id: string) => `/core/membres/?utilisateur_id=${id}`,
 
   // Config
   configCurrent: "/core/configurations/current/",
