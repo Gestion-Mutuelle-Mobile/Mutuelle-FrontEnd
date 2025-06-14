@@ -20,6 +20,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from "@react-navigation/native";
 import { useCurrentExercise, useCurrentSession } from "../../hooks/useExercise";
+import { toNumber } from "lodash";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -301,6 +302,7 @@ export default function MemberDashboardScreen() {
   const firstName = userName.split(' ')[0] || "Membre";
   
   const inscriptionProgress = member.donnees_financieres?.inscription.pourcentage_inscription;
+  const solidarityProgress= (toNumber(member.donnees_financieres?.solidarite)|0)*100/(toNumber(config?.montant_solidarite)|0);
   const epargneTotal = member.donnees_financieres?.epargne.epargne_totale;
   const interets = member.donnees_financieres?.epargne.montant_interets_separe;
   const maxEmpruntable = member.donnees_financieres?.emprunt.montant_max_empruntable;
@@ -332,9 +334,9 @@ export default function MemberDashboardScreen() {
                 onPress={handleNotificationsPress}
               >
                 <Ionicons name="notifications" size={24} color="white" />
-                <View style={styles.notificationBadge}>
+                {/* <View style={styles.notificationBadge}>
                   <Text style={styles.notificationBadgeText}>3</Text>
-                </View>
+                </View> */}
               </TouchableOpacity>
               
               <TouchableOpacity 
@@ -402,6 +404,7 @@ export default function MemberDashboardScreen() {
             icon="people"
             color={member.donnees_financieres?.solidarite.solidarite_a_jour ? BLUE_THEME.success : BLUE_THEME.warning}
             style={styles.cardSmall}
+            progress={solidarityProgress}
           />
         </View>
 

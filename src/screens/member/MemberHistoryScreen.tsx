@@ -196,7 +196,7 @@ const FinancialSummaryCard = ({ member }: { member: any }) => {
           >
             <Ionicons name="analytics" size={24} color="white" />
           </LinearGradient>
-          <Text style={styles.summaryTitle}>💎 Résumé Financier</Text>
+          <Text style={styles.summaryTitle}>Résumé Financier</Text>
         </View>
 
         <View style={styles.summaryMetrics}>
