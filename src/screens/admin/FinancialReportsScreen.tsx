@@ -317,7 +317,7 @@ export default function FinancialReportsScreen() {
 
   // Formatage monétaire
   const formatCurrency = (amount: number | undefined | null): string => {
-    if ( isNaN(amount)) return "0 FCFA";
+    if ( !amount || isNaN(amount)) return "0 FCFA";
     return new Intl.NumberFormat('fr-FR', {
       style: 'currency',
       currency: 'XAF',

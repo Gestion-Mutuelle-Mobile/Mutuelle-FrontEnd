@@ -406,9 +406,9 @@ export default function SavingsScreen() {
 
   // Statistiques globales
   const stats: SavingsStats = useMemo(() => {
-    const totalDepots = memberSavings.reduce((sum, m) => sum + m.total_depots, 0);
+    const totalDepots = memberSavings.reduce((sum, m) => sum + m.total_epargne, 0);
     const totalRetraits = memberSavings.reduce((sum, m) => sum + m.total_retraits, 0);
-    const totalEpargneGlobale = totalDepots - totalRetraits;
+    const totalEpargneGlobale = totalDepots;
     const moyenneParMembre = memberSavings.length > 0 ? totalEpargneGlobale / memberSavings.length : 0;
     
     // Transactions de ce mois
